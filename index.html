@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Quản lý công xa · Văn phòng PCLĐ</title>
+<meta name="description" content="Hệ thống quản lý công xa nội bộ của Văn phòng PCLĐ: xe, lái xe, điều xe, bảo dưỡng, bảo hiểm và nhiên liệu.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230B6E4F'/%3E%3Cpath d='M13 3 5 14h5l-1 7 8-11h-5l1-7z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&subset=vietnamese&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ ICON SPRITE ============ -->
+<svg style="display:none" aria-hidden="true">
+  <defs>
+    <g id="ic-grid"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></g>
+    <g id="ic-truck"><path d="M3 7h10v9H3z"/><path d="M13 10h4l4 3v3h-8z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></g>
+    <g id="ic-calendar"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></g>
+    <g id="ic-users"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15.8 14.3c2.8.3 4.9 2.4 4.9 5.7"/></g>
+    <g id="ic-wrench"><path d="M14.7 6.3a4 4 0 0 0-5.4 4.9L3 17.5 5.5 20l6.3-6.3a4 4 0 0 0 4.9-5.4l-2.6 2.6-2.1-2.1z"/></g>
+    <g id="ic-chart"><path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/><path d="M2 20h20"/></g>
+    <g id="ic-bell"><path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.5 6 1.5 6H4.5S6 14.5 6 10z"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0"/></g>
+    <g id="ic-search"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></g>
+    <g id="ic-plus"><path d="M12 4v16"/><path d="M4 12h16"/></g>
+    <g id="ic-x"><path d="M5 5l14 14"/><path d="M19 5L5 19"/></g>
+    <g id="ic-chevron-down"><path d="M6 9l6 6 6-6"/></g>
+    <g id="ic-edit"><path d="M4 20h4L20 8l-4-4L4 16v4z"/><path d="M13 7l4 4"/></g>
+    <g id="ic-trash"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6"/><path d="M14 11v6"/></g>
+    <g id="ic-check"><path d="M4 12l6 6L20 6"/></g>
+    <g id="ic-alert"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5"/><circle cx="12" cy="17.5" r=".2" fill="currentColor" stroke="none"/></g>
+    <g id="ic-droplet"><path d="M12 3s7 7.5 7 12a7 7 0 0 1-14 0c0-4.5 7-12 7-12z"/></g>
+    <g id="ic-menu"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></g>
+    <g id="ic-logout"><path d="M15 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9"/><path d="M10 12h11"/><path d="M17 8l4 4-4 4"/></g>
+    <g id="ic-phone"><path d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2C10 21 3 14 3 6a2 2 0 0 1 2-2z"/></g>
+    <g id="ic-clock"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></g>
+    <g id="ic-arrow-right"><path d="M4 12h16"/><path d="M13 5l7 7-7 7"/></g>
+    <g id="ic-id"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.5-1.8 2-2.5 3-2.5s2.5.7 3 2.5"/><path d="M14 9h5"/><path d="M14 13h5"/></g>
+    <g id="ic-fuel-pump"><rect x="4" y="4" width="10" height="16" rx="1"/><path d="M7 8h4"/><path d="M14 9h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0v-6l-2-3"/></g>
+    <g id="ic-map"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14"/><path d="M15 6v14"/></g>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-text">
+        <strong>Văn phòng PCLĐ</strong>
+        <small>Quản lý công xa</small>
+      </span>
+    </div>
+
+    <nav class="nav" aria-label="Điều hướng chính">
+      <button class="nav-item is-active" data-view="dashboard"><svg class="icon"><use href="#ic-grid"/></svg><span>Tổng quan</span></button>
+      <button class="nav-item" data-view="vehicles"><svg class="icon"><use href="#ic-truck"/></svg><span>Danh sách xe</span></button>
+      <button class="nav-item" data-view="dispatch"><svg class="icon"><use href="#ic-calendar"/></svg><span>Lịch điều xe</span></button>
+      <button class="nav-item" data-view="drivers"><svg class="icon"><use href="#ic-users"/></svg><span>Lái xe</span></button>
+      <button class="nav-item" data-view="maintenance"><svg class="icon"><use href="#ic-wrench"/></svg><span>Bảo dưỡng &amp; Nhiên liệu</span></button>
+      <button class="nav-item" data-view="reports"><svg class="icon"><use href="#ic-chart"/></svg><span>Báo cáo</span></button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="unit-card">
+        <span>Phạm vi quản lý</span>
+        <strong id="unitScope">—</strong>
+      </div>
+    </div>
+  </aside>
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="menuToggle" aria-label="Mở menu" aria-controls="sidebar" aria-expanded="false">
+        <svg class="icon"><use href="#ic-menu"/></svg>
+      </button>
+      <div class="topbar-title">
+        <h1 id="pageTitle">Tổng quan</h1>
+        <p id="pageSubtitle">Toàn cảnh hoạt động công xa hôm nay</p>
+      </div>
+      <div class="topbar-search">
+        <svg class="icon"><use href="#ic-search"/></svg>
+        <input type="search" id="globalSearch" placeholder="Tìm biển số, lái xe, lệnh điều xe…" aria-label="Tìm kiếm">
+      </div>
+      <button class="icon-btn" id="notifBtn" aria-label="Thông báo" aria-haspopup="true" aria-expanded="false">
+        <svg class="icon"><use href="#ic-bell"/></svg>
+        <span class="badge" id="notifCount" hidden>0</span>
+      </button>
+      <div class="notif-panel" id="notifPanel" hidden></div>
+      <div class="user-chip">
+        <span class="avatar">NA</span>
+        <span class="user-meta">
+          <strong>Nguyễn An</strong>
+          <small>Điều độ viên</small>
+        </span>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="view is-active" id="view-dashboard" data-view="dashboard">
+        <div class="view-head">
+          <div class="today" id="todayLabel"></div>
+          <button class="btn btn-primary" data-action="new-dispatch">
+            <svg class="icon"><use href="#ic-plus"/></svg> Tạo lệnh điều xe
+          </button>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div class="dash-grid">
+          <section class="card chart-card">
+            <div class="card-head">
+              <h2>Chi phí nhiên liệu 6 tháng gần nhất</h2>
+            </div>
+            <div id="fuelChart" class="chart-wrap"></div>
+          </section>
+
+          <section class="card alert-card">
+            <div class="card-head">
+              <h2>Cảnh báo sắp đến hạn</h2>
+            </div>
+            <ul class="alert-list" id="alertList"></ul>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Lệnh điều xe gần đây</h2>
+            <button class="link-btn" data-action="goto-dispatch">Xem tất cả <svg class="icon icon-sm"><use href="#ic-arrow-right"/></svg></button>
+          </div>
+          <div class="table-scroll">
+            <table class="table" id="recentDispatchTable"></table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ============ VEHICLES ============ -->
+      <section class="view" id="view-vehicles" data-view="vehicles">
+        <div class="view-head">
+          <div class="toolbar">
+            <div class="field-search">
+              <svg class="icon"><use href="#ic-search"/></svg>
+              <input type="search" id="vehicleSearch" placeholder="Tìm theo biển số, hãng xe…">
+            </div>
+            <select id="vehicleStatusFilter" class="select">
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="maintenance">Đang bảo dưỡng</option>
+              <option value="stopped">Ngừng sử dụng</option>
+            </select>
+            <select id="vehicleSiteFilter" class="select">
+              <option value="">Tất cả cơ sở</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" data-action="new-vehicle">
+            <svg class="icon"><use href="#ic-plus"/></svg> Thêm xe
+          </button>
+        </div>
+        <section class="card">
+          <div class="table-scroll">
+            <table class="table" id="vehicleTable"></table>
+          </div>
+          <p class="empty-state" id="vehicleEmpty" hidden>Không tìm thấy xe phù hợp.</p>
+        </section>
+      </section>
+
+      <!-- ============ DISPATCH ============ -->
+      <section class="view" id="view-dispatch" data-view="dispatch">
+        <div class="view-head">
+          <div class="tabs" id="dispatchTabs">
+            <button class="tab is-active" data-status="">Tất cả</button>
+            <button class="tab" data-status="pending">Chờ duyệt</button>
+            <button class="tab" data-status="approved">Đã duyệt</button>
+            <button class="tab" data-status="ongoing">Đang thực hiện</button>
+            <button class="tab" data-status="done">Hoàn thành</button>
+            <button class="tab" data-status="rejected">Từ chối</button>
+          </div>
+          <button class="btn btn-primary" data-action="new-dispatch">
+            <svg class="icon"><use href="#ic-plus"/></svg> Tạo lệnh mới
+          </button>
+        </div>
+        <section class="card">
+          <div class="table-scroll">
+            <table class="table" id="dispatchTable"></table>
+          </div>
+          <p class="empty-state" id="dispatchEmpty" hidden>Chưa có lệnh điều xe nào ở trạng thái này.</p>
+        </section>
+      </section>
+
+      <!-- ============ DRIVERS ============ -->
+      <section class="view" id="view-drivers" data-view="drivers">
+        <div class="view-head">
+          <div class="field-search">
+            <svg class="icon"><use href="#ic-search"/></svg>
+            <input type="search" id="driverSearch" placeholder="Tìm theo tên, số điện thoại…">
+          </div>
+          <button class="btn btn-primary" data-action="new-driver">
+            <svg class="icon"><use href="#ic-plus"/></svg> Thêm lái xe
+          </button>
+        </div>
+        <div class="driver-grid" id="driverGrid"></div>
+      </section>
+
+      <!-- ============ MAINTENANCE ============ -->
+      <section class="view" id="view-maintenance" data-view="maintenance">
+        <div class="view-head">
+          <div class="tabs" id="maintSubTabs">
+            <button class="tab is-active" data-sub="service">Bảo dưỡng &amp; Đăng kiểm</button>
+            <button class="tab" data-sub="fuel">Nhiên liệu</button>
+          </div>
+          <button class="btn btn-primary" data-action="new-service">
+            <svg class="icon"><use href="#ic-plus"/></svg> <span id="newServiceLabel">Thêm bản ghi</span>
+          </button>
+        </div>
+
+        <section class="card" id="serviceCard">
+          <div class="table-scroll">
+            <table class="table" id="serviceTable"></table>
+          </div>
+        </section>
+
+        <section class="card" id="fuelCard" hidden>
+          <div class="table-scroll">
+            <table class="table" id="fuelTable"></table>
+          </div>
+        </section>
+      </section>
+
+      <!-- ============ REPORTS ============ -->
+      <section class="view" id="view-reports" data-view="reports">
+        <div class="kpi-grid" id="reportKpiGrid"></div>
+        <div class="dash-grid">
+          <section class="card chart-card">
+            <div class="card-head"><h2>Chi phí vận hành theo tháng</h2></div>
+            <div id="reportCostChart" class="chart-wrap"></div>
+          </section>
+          <section class="card chart-card">
+            <div class="card-head"><h2>Cơ cấu trạng thái đội xe</h2></div>
+            <div id="statusDonut" class="chart-wrap chart-wrap-center"></div>
+          </section>
+        </div>
+        <section class="card">
+          <div class="card-head"><h2>Chi phí vận hành theo xe</h2></div>
+          <div class="table-scroll">
+            <table class="table" id="costByVehicleTable"></table>
+          </div>
+        </section>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ MODAL ROOT ============ -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">Tiêu đề</h2>
+      <button class="icon-btn" id="modalClose" aria-label="Đóng"><svg class="icon"><use href="#ic-x"/></svg></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
