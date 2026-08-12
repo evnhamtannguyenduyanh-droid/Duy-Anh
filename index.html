@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Quản lý công xa · Văn phòng PCLĐ</title>
-<meta name="description" content="Hệ thống quản lý công xa nội bộ của Văn phòng PCLĐ: xe, lái xe, điều xe, bảo dưỡng, bảo hiểm và nhiên liệu.">
+<meta name="description" content="Hệ thống quản lý công xa nội bộ của Văn phòng PCLĐ: xe, lái xe, bảo dưỡng, kiểm định và bảo hiểm.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230B6E4F'/%3E%3Cpath d='M13 3 5 14h5l-1 7 8-11h-5l1-7z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,11 +58,10 @@
     </div>
 
     <nav class="nav" aria-label="Điều hướng chính">
-      <button class="nav-item is-active" data-view="dashboard"><svg class="icon"><use href="#ic-grid"/></svg><span>Tổng quan</span></button>
-      <button class="nav-item" data-view="vehicles"><svg class="icon"><use href="#ic-truck"/></svg><span>Danh sách xe</span></button>
-      <button class="nav-item" data-view="dispatch"><svg class="icon"><use href="#ic-calendar"/></svg><span>Lịch điều xe</span></button>
+      <button class="nav-item is-active" data-view="vehicles"><svg class="icon"><use href="#ic-truck"/></svg><span>Danh sách xe</span></button>
       <button class="nav-item" data-view="drivers"><svg class="icon"><use href="#ic-users"/></svg><span>Lái xe</span></button>
-      <button class="nav-item" data-view="maintenance"><svg class="icon"><use href="#ic-wrench"/></svg><span>Bảo dưỡng &amp; Nhiên liệu</span></button>
+      <button class="nav-item" data-view="maintenance"><svg class="icon"><use href="#ic-wrench"/></svg><span>Bảo dưỡng</span></button>
+      <button class="nav-item" data-view="inspection"><svg class="icon"><use href="#ic-calendar"/></svg><span>Kiểm định</span></button>
       <button class="nav-item" data-view="reports"><svg class="icon"><use href="#ic-chart"/></svg><span>Báo cáo</span></button>
     </nav>
 
@@ -83,69 +82,24 @@
         <svg class="icon"><use href="#ic-menu"/></svg>
       </button>
       <div class="topbar-title">
-        <h1 id="pageTitle">Tổng quan</h1>
-        <p id="pageSubtitle">Toàn cảnh hoạt động công xa hôm nay</p>
+        <h1 id="pageTitle">Danh sách xe</h1>
+        <p id="pageSubtitle">Hồ sơ và tình trạng toàn bộ đội xe</p>
       </div>
       <div class="topbar-search">
         <svg class="icon"><use href="#ic-search"/></svg>
-        <input type="search" id="globalSearch" placeholder="Tìm biển số, lái xe, lệnh điều xe…" aria-label="Tìm kiếm">
+        <input type="search" id="globalSearch" placeholder="Tìm biển số, lái xe…" aria-label="Tìm kiếm">
       </div>
       <button class="icon-btn" id="notifBtn" aria-label="Thông báo" aria-haspopup="true" aria-expanded="false">
         <svg class="icon"><use href="#ic-bell"/></svg>
         <span class="badge" id="notifCount" hidden>0</span>
       </button>
       <div class="notif-panel" id="notifPanel" hidden></div>
-      <div class="user-chip">
-        <span class="avatar">NA</span>
-        <span class="user-meta">
-          <strong>Nguyễn An</strong>
-          <small>Điều độ viên</small>
-        </span>
-      </div>
     </header>
 
     <main class="content" id="content">
 
-      <!-- ============ DASHBOARD ============ -->
-      <section class="view is-active" id="view-dashboard" data-view="dashboard">
-        <div class="view-head">
-          <div class="today" id="todayLabel"></div>
-          <button class="btn btn-primary" data-action="new-dispatch">
-            <svg class="icon"><use href="#ic-plus"/></svg> Tạo lệnh điều xe
-          </button>
-        </div>
-
-        <div class="kpi-grid" id="kpiGrid"></div>
-
-        <div class="dash-grid">
-          <section class="card chart-card">
-            <div class="card-head">
-              <h2>Chi phí nhiên liệu 6 tháng gần nhất</h2>
-            </div>
-            <div id="fuelChart" class="chart-wrap"></div>
-          </section>
-
-          <section class="card alert-card">
-            <div class="card-head">
-              <h2>Cảnh báo sắp đến hạn</h2>
-            </div>
-            <ul class="alert-list" id="alertList"></ul>
-          </section>
-        </div>
-
-        <section class="card">
-          <div class="card-head">
-            <h2>Lệnh điều xe gần đây</h2>
-            <button class="link-btn" data-action="goto-dispatch">Xem tất cả <svg class="icon icon-sm"><use href="#ic-arrow-right"/></svg></button>
-          </div>
-          <div class="table-scroll">
-            <table class="table" id="recentDispatchTable"></table>
-          </div>
-        </section>
-      </section>
-
       <!-- ============ VEHICLES ============ -->
-      <section class="view" id="view-vehicles" data-view="vehicles">
+      <section class="view is-active" id="view-vehicles" data-view="vehicles">
         <div class="view-head">
           <div class="toolbar">
             <div class="field-search">
@@ -174,29 +128,6 @@
         </section>
       </section>
 
-      <!-- ============ DISPATCH ============ -->
-      <section class="view" id="view-dispatch" data-view="dispatch">
-        <div class="view-head">
-          <div class="tabs" id="dispatchTabs">
-            <button class="tab is-active" data-status="">Tất cả</button>
-            <button class="tab" data-status="pending">Chờ duyệt</button>
-            <button class="tab" data-status="approved">Đã duyệt</button>
-            <button class="tab" data-status="ongoing">Đang thực hiện</button>
-            <button class="tab" data-status="done">Hoàn thành</button>
-            <button class="tab" data-status="rejected">Từ chối</button>
-          </div>
-          <button class="btn btn-primary" data-action="new-dispatch">
-            <svg class="icon"><use href="#ic-plus"/></svg> Tạo lệnh mới
-          </button>
-        </div>
-        <section class="card">
-          <div class="table-scroll">
-            <table class="table" id="dispatchTable"></table>
-          </div>
-          <p class="empty-state" id="dispatchEmpty" hidden>Chưa có lệnh điều xe nào ở trạng thái này.</p>
-        </section>
-      </section>
-
       <!-- ============ DRIVERS ============ -->
       <section class="view" id="view-drivers" data-view="drivers">
         <div class="view-head">
@@ -214,25 +145,32 @@
       <!-- ============ MAINTENANCE ============ -->
       <section class="view" id="view-maintenance" data-view="maintenance">
         <div class="view-head">
-          <div class="tabs" id="maintSubTabs">
-            <button class="tab is-active" data-sub="service">Bảo dưỡng &amp; Đăng kiểm</button>
-            <button class="tab" data-sub="fuel">Nhiên liệu</button>
-          </div>
+          <h2 class="view-head-title">Lịch sử bảo dưỡng &amp; sửa chữa</h2>
           <button class="btn btn-primary" data-action="new-service">
-            <svg class="icon"><use href="#ic-plus"/></svg> <span id="newServiceLabel">Thêm bản ghi</span>
+            <svg class="icon"><use href="#ic-plus"/></svg> Thêm bản ghi
           </button>
         </div>
-
-        <section class="card" id="serviceCard">
+        <section class="card">
           <div class="table-scroll">
             <table class="table" id="serviceTable"></table>
           </div>
+          <p class="empty-state" id="serviceEmpty" hidden>Chưa có bản ghi bảo dưỡng nào.</p>
         </section>
+      </section>
 
-        <section class="card" id="fuelCard" hidden>
+      <!-- ============ INSPECTION (ĐĂNG KIỂM) ============ -->
+      <section class="view" id="view-inspection" data-view="inspection">
+        <div class="view-head">
+          <h2 class="view-head-title">Lịch sử kiểm định &amp; đăng kiểm</h2>
+          <button class="btn btn-primary" data-action="new-inspection">
+            <svg class="icon"><use href="#ic-plus"/></svg> Thêm bản ghi kiểm định
+          </button>
+        </div>
+        <section class="card">
           <div class="table-scroll">
-            <table class="table" id="fuelTable"></table>
+            <table class="table" id="inspectionTable"></table>
           </div>
+          <p class="empty-state" id="inspectionEmpty" hidden>Chưa có bản ghi kiểm định nào.</p>
         </section>
       </section>
 
@@ -241,7 +179,7 @@
         <div class="kpi-grid" id="reportKpiGrid"></div>
         <div class="dash-grid">
           <section class="card chart-card">
-            <div class="card-head"><h2>Chi phí vận hành theo tháng</h2></div>
+            <div class="card-head"><h2>Chi phí bảo dưỡng theo tháng</h2></div>
             <div id="reportCostChart" class="chart-wrap"></div>
           </section>
           <section class="card chart-card">
@@ -250,7 +188,7 @@
           </section>
         </div>
         <section class="card">
-          <div class="card-head"><h2>Chi phí vận hành theo xe</h2></div>
+          <div class="card-head"><h2>Chi phí bảo dưỡng theo xe</h2></div>
           <div class="table-scroll">
             <table class="table" id="costByVehicleTable"></table>
           </div>

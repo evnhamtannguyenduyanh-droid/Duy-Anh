@@ -4,7 +4,7 @@
 /* ==========================================================================
    Constants & helpers
    ========================================================================== */
-var STORAGE_KEY = "congxa-pcld-v1";
+var STORAGE_KEY = "congxa-pcld-v2";
 var DAY = 86400000;
 
 var VEHICLE_TYPES = [
@@ -22,14 +22,8 @@ var DRIVER_STATUS = {
   active:   { label: "Đang làm việc", tone: "success" },
   inactive: { label: "Tạm nghỉ",      tone: "muted" }
 };
-var DISPATCH_STATUS = {
-  pending:  { label: "Chờ duyệt",       tone: "muted" },
-  approved: { label: "Đã duyệt",        tone: "info" },
-  ongoing:  { label: "Đang thực hiện",  tone: "warning" },
-  done:     { label: "Hoàn thành",      tone: "success" },
-  rejected: { label: "Từ chối",         tone: "danger" }
-};
-var SERVICE_TYPES = ["Bảo dưỡng định kỳ", "Sửa chữa", "Đăng kiểm"];
+var SERVICE_TYPES = ["Bảo dưỡng định kỳ", "Sửa chữa"];
+var INSPECTION_TYPE = "Đăng kiểm";
 
 function uid(prefix) {
   return prefix + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -100,13 +94,11 @@ function buildSeedData() {
     { id: "v15", plate: "49B-173.07", type: "Xe con 5 chỗ", brand: "Toyota Camry", year: 2010, odo: 470178, status: "active", regExpiry: "2027-03-10", lastInspection: "2026-03-11", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "20 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 470.000 km, cấp 2 ở 450.000 km (ngưỡng 5.000 km / 30.000 km — Xe con)." }
   ];
 
-  // Chưa có dữ liệu lái xe / lệnh điều xe / bảo dưỡng / nhiên liệu thật — để trống, tự nhập qua giao diện.
+  // Chưa có dữ liệu lái xe / bảo dưỡng / kiểm định thật — để trống, tự nhập qua giao diện.
   var drivers = [];
-  var dispatches = [];
   var maintenance = [];
-  var fuel = [];
 
-  return { vehicles: vehicles, drivers: drivers, dispatches: dispatches, maintenance: maintenance, fuel: fuel };
+  return { vehicles: vehicles, drivers: drivers, maintenance: maintenance };
 }
 
 /* ==========================================================================
@@ -133,7 +125,7 @@ function getDriver(id) { return DB.drivers.find(function (dr) { return dr.id ===
 /* ==========================================================================
    Global UI state
    ========================================================================== */
-var state = { view: "dashboard", dispatchStatus: "", maintSub: "service", lastFocused: null };
+var state = { view: "vehicles", lastFocused: null };
 
 var $ = function (sel, root) { return (root || document).querySelector(sel); };
 var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -237,7 +229,7 @@ function renderDonutChart(container, segments) {
 }
 
 /* ==========================================================================
-   Last N months bucketing (fuel + maintenance costs)
+   Last N months bucketing (maintenance costs)
    ========================================================================== */
 function lastMonths(n) {
   var out = [];
@@ -254,7 +246,7 @@ function inSameMonth(iso, ref) {
 }
 
 /* ==========================================================================
-   Notifications (upcoming / overdue registration, license, maintenance)
+   Notifications (upcoming / overdue registration, license, insurance, maintenance)
    ========================================================================== */
 function collectAlerts() {
   var items = [];
@@ -323,12 +315,11 @@ document.addEventListener("click", function (e) {
    Navigation
    ========================================================================== */
 var PAGE_META = {
-  dashboard: { title: "Tổng quan", sub: "Toàn cảnh hoạt động công xa hôm nay" },
   vehicles: { title: "Danh sách xe", sub: "Hồ sơ và tình trạng toàn bộ đội xe" },
-  dispatch: { title: "Lịch điều xe", sub: "Đăng ký, duyệt và theo dõi lệnh điều động" },
   drivers: { title: "Lái xe", sub: "Hồ sơ lái xe và phân công phương tiện" },
-  maintenance: { title: "Bảo dưỡng & Nhiên liệu", sub: "Lịch sử bảo dưỡng, đăng kiểm và nhiên liệu" },
-  reports: { title: "Báo cáo", sub: "Chi phí vận hành và hiệu suất sử dụng xe" }
+  maintenance: { title: "Bảo dưỡng", sub: "Lịch sử bảo dưỡng định kỳ và sửa chữa" },
+  inspection: { title: "Kiểm định", sub: "Lịch sử đăng kiểm và hạn kiểm định" },
+  reports: { title: "Báo cáo", sub: "Chi phí bảo dưỡng và tình trạng đội xe" }
 };
 
 function switchView(view) {
@@ -349,62 +340,11 @@ $("#menuToggle").addEventListener("click", function () { $("#sidebar").classList
 $("#scrim").addEventListener("click", closeSidebar);
 
 function renderView(view) {
-  if (view === "dashboard") renderDashboard();
-  else if (view === "vehicles") renderVehicles();
-  else if (view === "dispatch") renderDispatch();
+  if (view === "vehicles") renderVehicles();
   else if (view === "drivers") renderDrivers();
   else if (view === "maintenance") renderMaintenance();
+  else if (view === "inspection") renderInspection();
   else if (view === "reports") renderReports();
-}
-
-/* ==========================================================================
-   Dashboard
-   ========================================================================== */
-function renderDashboard() {
-  $("#todayLabel").textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
-
-  var todayIso = isoDate(new Date());
-  var activeCount = DB.vehicles.filter(function (v) { return v.status === "active"; }).length;
-  var maintCount = DB.vehicles.filter(function (v) { return v.status === "maintenance"; }).length;
-  var todayDispatch = DB.dispatches.filter(function (p) { return p.date === todayIso; }).length;
-
-  var kpis = [
-    { icon: "ic-truck", tone: "primary", label: "Tổng số xe", value: DB.vehicles.length },
-    { icon: "ic-check", tone: "success", label: "Đang hoạt động", value: activeCount },
-    { icon: "ic-wrench", tone: "warning", label: "Đang bảo dưỡng", value: maintCount },
-    { icon: "ic-calendar", tone: "info", label: "Lệnh điều xe hôm nay", value: todayDispatch }
-  ];
-  $("#kpiGrid").innerHTML = kpis.map(function (k) {
-    return '<div class="kpi-card"><div class="kpi-top"><span class="kpi-icon" style="background:var(--color-' + k.tone + (k.tone === "primary" ? "-light" : "-bg") + ');color:var(--color-' + k.tone + (k.tone === "primary" ? "" : "") + ')"><svg class="icon"><use href="#' + k.icon + '"/></svg></span></div>' +
-      '<span class="kpi-value">' + k.value + '</span><span class="kpi-label">' + k.label + '</span></div>';
-  }).join("");
-
-  // fuel cost, last 6 months
-  var months = lastMonths(6);
-  var points = months.map(function (m) {
-    var sum = DB.fuel.filter(function (f) { return inSameMonth(f.date, m); }).reduce(function (s, f) { return s + f.liters * f.price; }, 0);
-    return { label: monthLabel(m), value: sum };
-  });
-  renderBarChart($("#fuelChart"), points, { valueFormatter: function (v) { return v >= 1000000 ? (v / 1000000).toFixed(1) + "tr" : v ? (v / 1000).toFixed(0) + "k" : "0"; } });
-
-  // alerts
-  var alerts = collectAlerts();
-  var alertList = $("#alertList");
-  if (!alerts.length) {
-    alertList.innerHTML = '<li class="notif-empty">Không có cảnh báo nào trong 30 ngày tới.</li>';
-  } else {
-    alertList.innerHTML = alerts.slice(0, 6).map(function (a) {
-      var tone = a.due < 0 ? "danger" : a.due <= 7 ? "warning" : "info";
-      return '<li class="alert-item"><span class="alert-icon" style="background:var(--color-' + tone + '-bg);color:var(--color-' + tone + ')"><svg class="icon icon-sm"><use href="#' + a.icon + '"/></svg></span>' +
-        '<div class="alert-body"><p>' + escapeHtml(a.title) + '</p><small>' + escapeHtml(a.detail) + '</small></div></li>';
-    }).join("");
-  }
-
-  // recent dispatch
-  var recent = DB.dispatches.slice().sort(function (a, b) { return b.date.localeCompare(a.date); }).slice(0, 5);
-  $("#recentDispatchTable").innerHTML = dispatchTableHtml(recent, false);
-
-  wireDispatchRowActions($("#recentDispatchTable"));
 }
 
 /* ==========================================================================
@@ -566,137 +506,6 @@ function field(label, controlHtml, full) {
 }
 
 /* ==========================================================================
-   Dispatch
-   ========================================================================== */
-function dispatchTableHtml(list, withActions) {
-  if (withActions === undefined) withActions = true;
-  if (!list.length) return "";
-  return '<thead><tr><th>Ngày</th><th>Xe</th><th>Lái xe</th><th>Người yêu cầu</th><th>Tuyến đường</th><th>Mục đích</th><th>Trạng thái</th>' + (withActions ? "<th></th>" : "") + '</tr></thead><tbody>' +
-    list.map(function (p) {
-      var v = getVehicle(p.vehicleId), dr = getDriver(p.driverId), st = DISPATCH_STATUS[p.status];
-      return '<tr data-id="' + p.id + '">' +
-        '<td class="cell-primary">' + fmtDate(p.date) + '<div class="cell-muted">' + p.start + (p.end ? " – " + p.end : "") + '</div></td>' +
-        '<td>' + (v ? escapeHtml(v.plate) : "—") + '</td>' +
-        '<td>' + (dr ? escapeHtml(dr.name) : "—") + '</td>' +
-        '<td>' + escapeHtml(p.requester) + '<div class="cell-muted">' + escapeHtml(p.dept) + '</div></td>' +
-        '<td class="cell-muted">' + escapeHtml(p.from) + ' → ' + escapeHtml(p.to) + '</td>' +
-        '<td>' + escapeHtml(p.purpose) + '</td>' +
-        '<td>' + badge(st.tone, st.label) + '</td>' +
-        (withActions ? '<td><div class="row-actions">' + dispatchActionButtons(p) + '</div></td>' : "") +
-      '</tr>';
-    }).join("") + "</tbody>";
-}
-function dispatchActionButtons(p) {
-  if (p.status === "pending") {
-    return '<button class="btn btn-sm btn-primary" data-action="approve" data-id="' + p.id + '">Duyệt</button>' +
-      '<button class="btn btn-sm btn-danger" data-action="reject" data-id="' + p.id + '">Từ chối</button>';
-  }
-  if (p.status === "approved") {
-    return '<button class="btn btn-sm btn-primary" data-action="start" data-id="' + p.id + '">Bắt đầu</button>';
-  }
-  if (p.status === "ongoing") {
-    return '<button class="btn btn-sm btn-primary" data-action="complete" data-id="' + p.id + '">Hoàn thành</button>';
-  }
-  return '<span class="cell-muted">—</span>';
-}
-function wireDispatchRowActions(root) {
-  $$('[data-action="approve"]', root).forEach(function (b) { b.addEventListener("click", function () { setDispatchStatus(b.dataset.id, "approved", "Đã duyệt lệnh điều xe"); }); });
-  $$('[data-action="reject"]', root).forEach(function (b) { b.addEventListener("click", function () { setDispatchStatus(b.dataset.id, "rejected", "Đã từ chối lệnh điều xe"); }); });
-  $$('[data-action="start"]', root).forEach(function (b) { b.addEventListener("click", function () { setDispatchStatus(b.dataset.id, "ongoing", "Đã bắt đầu chuyến đi"); }); });
-  $$('[data-action="complete"]', root).forEach(function (b) { b.addEventListener("click", function () { setDispatchStatus(b.dataset.id, "done", "Đã hoàn thành chuyến đi"); }); });
-}
-function setDispatchStatus(id, status, msg) {
-  var p = DB.dispatches.find(function (x) { return x.id === id; });
-  if (!p) return;
-  p.status = status;
-  save();
-  toast(msg, status === "rejected" ? "danger" : "success");
-  renderView(state.view);
-}
-
-function renderDispatch() {
-  var list = DB.dispatches.filter(function (p) { return !state.dispatchStatus || p.status === state.dispatchStatus; })
-    .slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
-  var table = $("#dispatchTable");
-  if (!list.length) {
-    table.innerHTML = "";
-    $("#dispatchEmpty").hidden = false;
-  } else {
-    $("#dispatchEmpty").hidden = true;
-    table.innerHTML = dispatchTableHtml(list, true);
-    wireDispatchRowActions(table);
-  }
-}
-$$("#dispatchTabs .tab").forEach(function (tab) {
-  tab.addEventListener("click", function () {
-    $$("#dispatchTabs .tab").forEach(function (t) { t.classList.remove("is-active"); });
-    tab.classList.add("is-active");
-    state.dispatchStatus = tab.dataset.status;
-    renderDispatch();
-  });
-});
-
-function activeVehicleOptions(selectedId) {
-  return DB.vehicles.filter(function (v) { return v.status !== "stopped"; }).map(function (v) {
-    return '<option value="' + v.id + '"' + (v.id === selectedId ? " selected" : "") + '>' + escapeHtml(v.plate) + " — " + escapeHtml(v.type) + '</option>';
-  }).join("");
-}
-function driverSelectOptions(selectedId) {
-  return DB.drivers.map(function (dr) {
-    return '<option value="' + dr.id + '"' + (dr.id === selectedId ? " selected" : "") + '>' + escapeHtml(dr.name) + '</option>';
-  }).join("");
-}
-
-function openDispatchForm() {
-  var body =
-    '<form id="dispatchForm" class="form-grid" novalidate>' +
-      field("Ngày sử dụng", '<input name="date" type="date" required autofocus value="' + isoDate(new Date()) + '">') +
-      field("Giờ đi / Giờ về dự kiến", '<div style="display:flex;gap:8px"><input name="start" type="time" required value="08:00" style="flex:1"><input name="end" type="time" value="17:00" style="flex:1"></div>') +
-      field("Chọn xe", '<select name="vehicleId" required>' + activeVehicleOptions() + '</select>') +
-      field("Chọn lái xe", '<select name="driverId" required>' + driverSelectOptions() + '</select>') +
-      field("Người yêu cầu", '<input name="requester" required placeholder="Họ và tên">') +
-      field("Đơn vị / Phòng ban", '<input name="dept" required placeholder="Ví dụ: Phòng Kỹ thuật">') +
-      field("Điểm đi", '<input name="from" required placeholder="Văn phòng PCLĐ — Cơ sở…">') +
-      field("Điểm đến", '<input name="to" required placeholder="Nơi đến">') +
-      field("Mục đích công tác", '<textarea name="purpose" required placeholder="Nội dung công việc cần thực hiện"></textarea>', true) +
-      '<div class="form-actions full">' +
-        '<button type="button" class="btn btn-ghost" id="dispatchCancelBtn">Huỷ</button>' +
-        '<button type="submit" class="btn btn-primary">Gửi lệnh điều xe</button>' +
-      '</div>' +
-    '</form>';
-
-  openModal("Tạo lệnh điều xe", body, function (root) {
-    $("#dispatchCancelBtn", root).addEventListener("click", closeModal);
-    var vSel = root.querySelector('[name="vehicleId"]');
-    var dSel = root.querySelector('[name="driverId"]');
-    vSel.addEventListener("change", function () {
-      var v = getVehicle(vSel.value);
-      if (v && v.driverId) dSel.value = v.driverId;
-    });
-    $("#dispatchForm", root).addEventListener("submit", function (e) {
-      e.preventDefault();
-      var f = new FormData(e.target);
-      var rec = {
-        id: uid("p"), date: f.get("date"), start: f.get("start"), end: f.get("end") || "",
-        vehicleId: f.get("vehicleId"), driverId: f.get("driverId"),
-        requester: f.get("requester").trim(), dept: f.get("dept").trim(),
-        from: f.get("from").trim(), to: f.get("to").trim(), purpose: f.get("purpose").trim(),
-        status: "pending"
-      };
-      DB.dispatches.unshift(rec);
-      save();
-      closeModal();
-      toast("Đã gửi lệnh điều xe, chờ duyệt", "success");
-      switchView("dispatch");
-    });
-  });
-}
-document.addEventListener("click", function (e) {
-  if (e.target.closest('[data-action="new-dispatch"]')) openDispatchForm();
-  if (e.target.closest('[data-action="goto-dispatch"]')) switchView("dispatch");
-});
-
-/* ==========================================================================
    Drivers
    ========================================================================== */
 function driverCardHtml(dr) {
@@ -792,7 +601,7 @@ function confirmDeleteDriver(id) {
 document.addEventListener("click", function (e) { if (e.target.closest('[data-action="new-driver"]')) openDriverForm(null); });
 
 /* ==========================================================================
-   Maintenance & Fuel
+   Maintenance (Bảo dưỡng định kỳ / Sửa chữa)
    ========================================================================== */
 function serviceStatusMeta(m) {
   if (!m.nextDue) return { tone: "muted", label: "Đã hoàn thành" };
@@ -801,53 +610,35 @@ function serviceStatusMeta(m) {
   if (du <= 30) return { tone: "warning", label: "Còn " + du + " ngày" };
   return { tone: "success", label: "Còn hạn" };
 }
+function allVehicleOptions(selectedId) {
+  return DB.vehicles.map(function (v) { return '<option value="' + v.id + '"' + (v.id === selectedId ? " selected" : "") + '>' + escapeHtml(v.plate) + '</option>'; }).join("");
+}
+function maintenanceRowHtml(m, dateLabel) {
+  var v = getVehicle(m.vehicleId), st = serviceStatusMeta(m);
+  return '<tr><td class="cell-primary">' + (v ? escapeHtml(v.plate) : "—") + '</td><td>' + escapeHtml(m.type) + '</td>' +
+    '<td class="cell-muted">' + fmtDate(m.date) + '</td><td class="cell-muted">' + fmtKm(m.odo) + '</td>' +
+    '<td>' + fmtCurrency(m.cost) + '</td><td class="cell-muted">' + (m.nextDue ? fmtDate(m.nextDue) : "—") + '</td>' +
+    '<td>' + badge(st.tone, st.label) + '</td>' +
+    '<td><div class="row-actions"><button class="icon-btn btn-sm" data-action="delete-maint" data-id="' + m.id + '" aria-label="Xoá"><svg class="icon icon-sm"><use href="#ic-trash"/></svg></button></div></td></tr>';
+}
 function renderMaintenance() {
-  $$("#maintSubTabs .tab").forEach(function (t) { t.classList.toggle("is-active", t.dataset.sub === state.maintSub); });
-  $("#serviceCard").hidden = state.maintSub !== "service";
-  $("#fuelCard").hidden = state.maintSub !== "fuel";
-  $("#newServiceLabel").textContent = state.maintSub === "service" ? "Thêm bản ghi bảo dưỡng" : "Thêm nhật ký nhiên liệu";
-
-  if (state.maintSub === "service") {
-    var list = DB.maintenance.slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
-    $("#serviceTable").innerHTML = '<thead><tr><th>Xe</th><th>Loại</th><th>Ngày thực hiện</th><th>Số km</th><th>Chi phí</th><th>Hạn tiếp theo</th><th>Trạng thái</th><th></th></tr></thead><tbody>' +
-      list.map(function (m) {
-        var v = getVehicle(m.vehicleId), st = serviceStatusMeta(m);
-        return '<tr><td class="cell-primary">' + (v ? escapeHtml(v.plate) : "—") + '</td><td>' + escapeHtml(m.type) + '</td>' +
-          '<td class="cell-muted">' + fmtDate(m.date) + '</td><td class="cell-muted">' + fmtKm(m.odo) + '</td>' +
-          '<td>' + fmtCurrency(m.cost) + '</td><td class="cell-muted">' + (m.nextDue ? fmtDate(m.nextDue) : "—") + '</td>' +
-          '<td>' + badge(st.tone, st.label) + '</td>' +
-          '<td><div class="row-actions"><button class="icon-btn btn-sm" data-action="delete-service" data-id="' + m.id + '" aria-label="Xoá"><svg class="icon icon-sm"><use href="#ic-trash"/></svg></button></div></td></tr>';
-      }).join("") + "</tbody>";
-    $$('[data-action="delete-service"]', $("#serviceTable")).forEach(function (b) {
+  var list = DB.maintenance.filter(function (m) { return m.type !== INSPECTION_TYPE; }).sort(function (a, b) { return b.date.localeCompare(a.date); });
+  var table = $("#serviceTable");
+  if (!list.length) {
+    table.innerHTML = "";
+    $("#serviceEmpty").hidden = false;
+  } else {
+    $("#serviceEmpty").hidden = true;
+    table.innerHTML = '<thead><tr><th>Xe</th><th>Loại</th><th>Ngày thực hiện</th><th>Số km</th><th>Chi phí</th><th>Hạn tiếp theo</th><th>Trạng thái</th><th></th></tr></thead><tbody>' +
+      list.map(function (m) { return maintenanceRowHtml(m); }).join("") + "</tbody>";
+    $$('[data-action="delete-maint"]', table).forEach(function (b) {
       b.addEventListener("click", function () {
         if (!window.confirm("Xoá bản ghi bảo dưỡng này?")) return;
         DB.maintenance = DB.maintenance.filter(function (x) { return x.id !== b.dataset.id; });
         save(); renderMaintenance(); renderNotif();
       });
     });
-  } else {
-    var flist = DB.fuel.slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
-    $("#fuelTable").innerHTML = '<thead><tr><th>Xe</th><th>Ngày đổ</th><th>Số lít</th><th>Đơn giá</th><th>Thành tiền</th><th>Số km</th><th>Trạm xăng</th><th></th></tr></thead><tbody>' +
-      flist.map(function (f) {
-        var v = getVehicle(f.vehicleId);
-        return '<tr><td class="cell-primary">' + (v ? escapeHtml(v.plate) : "—") + '</td><td class="cell-muted">' + fmtDate(f.date) + '</td>' +
-          '<td>' + f.liters + ' L</td><td class="cell-muted">' + fmtCurrency(f.price) + '</td><td>' + fmtCurrency(f.liters * f.price) + '</td>' +
-          '<td class="cell-muted">' + fmtKm(f.odo) + '</td><td class="cell-muted">' + escapeHtml(f.station) + '</td>' +
-          '<td><div class="row-actions"><button class="icon-btn btn-sm" data-action="delete-fuel" data-id="' + f.id + '" aria-label="Xoá"><svg class="icon icon-sm"><use href="#ic-trash"/></svg></button></div></td></tr>';
-      }).join("") + "</tbody>";
-    $$('[data-action="delete-fuel"]', $("#fuelTable")).forEach(function (b) {
-      b.addEventListener("click", function () {
-        if (!window.confirm("Xoá nhật ký nhiên liệu này?")) return;
-        DB.fuel = DB.fuel.filter(function (x) { return x.id !== b.dataset.id; });
-        save(); renderMaintenance();
-      });
-    });
   }
-}
-$$("#maintSubTabs .tab").forEach(function (tab) { tab.addEventListener("click", function () { state.maintSub = tab.dataset.sub; renderMaintenance(); }); });
-
-function allVehicleOptions(selectedId) {
-  return DB.vehicles.map(function (v) { return '<option value="' + v.id + '"' + (v.id === selectedId ? " selected" : "") + '>' + escapeHtml(v.plate) + '</option>'; }).join("");
 }
 function openServiceForm() {
   var body =
@@ -861,42 +652,71 @@ function openServiceForm() {
       field("Ghi chú", '<textarea name="note" placeholder="Nội dung thực hiện"></textarea>', true) +
       '<div class="form-actions full"><button type="button" class="btn btn-ghost" id="serviceCancelBtn">Huỷ</button><button type="submit" class="btn btn-primary">Lưu bản ghi</button></div>' +
     '</form>';
-  openModal("Thêm bản ghi bảo dưỡng / đăng kiểm", body, function (root) {
+  openModal("Thêm bản ghi bảo dưỡng", body, function (root) {
     $("#serviceCancelBtn", root).addEventListener("click", closeModal);
     $("#serviceForm", root).addEventListener("submit", function (e) {
       e.preventDefault();
       var f = new FormData(e.target);
       DB.maintenance.unshift({ id: uid("m"), vehicleId: f.get("vehicleId"), type: f.get("type"), date: f.get("date"), odo: Number(f.get("odo")), cost: Number(f.get("cost")), nextDue: f.get("nextDue") || "", note: (f.get("note") || "").trim() });
-      save(); closeModal(); toast("Đã lưu bản ghi bảo dưỡng", "success"); state.maintSub = "service"; renderMaintenance(); renderNotif();
+      save(); closeModal(); toast("Đã lưu bản ghi bảo dưỡng", "success"); renderMaintenance(); renderNotif();
     });
   });
 }
-function openFuelForm() {
+document.addEventListener("click", function (e) { if (e.target.closest('[data-action="new-service"]')) openServiceForm(); });
+
+/* ==========================================================================
+   Inspection (Kiểm định / Đăng kiểm)
+   ========================================================================== */
+function renderInspection() {
+  var list = DB.maintenance.filter(function (m) { return m.type === INSPECTION_TYPE; }).sort(function (a, b) { return b.date.localeCompare(a.date); });
+  var table = $("#inspectionTable");
+  if (!list.length) {
+    table.innerHTML = "";
+    $("#inspectionEmpty").hidden = false;
+  } else {
+    $("#inspectionEmpty").hidden = true;
+    table.innerHTML = '<thead><tr><th>Xe</th><th>Loại</th><th>Ngày kiểm định</th><th>Số km</th><th>Chi phí</th><th>Hạn kiểm định tiếp theo</th><th>Trạng thái</th><th></th></tr></thead><tbody>' +
+      list.map(function (m) { return maintenanceRowHtml(m); }).join("") + "</tbody>";
+    $$('[data-action="delete-maint"]', table).forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (!window.confirm("Xoá bản ghi kiểm định này?")) return;
+        DB.maintenance = DB.maintenance.filter(function (x) { return x.id !== b.dataset.id; });
+        save(); renderInspection(); renderNotif();
+      });
+    });
+  }
+}
+function openInspectionForm() {
   var body =
-    '<form id="fuelForm" class="form-grid" novalidate>' +
+    '<form id="inspectionForm" class="form-grid" novalidate>' +
       field("Chọn xe", '<select name="vehicleId" required autofocus>' + allVehicleOptions() + '</select>') +
-      field("Ngày đổ", '<input name="date" type="date" required value="' + isoDate(new Date()) + '">') +
-      field("Số lít", '<input name="liters" type="number" min="0" step="0.1" required>') +
-      field("Đơn giá (VNĐ/lít)", '<input name="price" type="number" min="0" required value="21500">') +
+      field("Ngày kiểm định", '<input name="date" type="date" required value="' + isoDate(new Date()) + '">') +
       field("Số km", '<input name="odo" type="number" min="0" required>') +
-      field("Trạm xăng", '<input name="station" placeholder="Petrolimex…">') +
-      '<div class="form-actions full"><button type="button" class="btn btn-ghost" id="fuelCancelBtn">Huỷ</button><button type="submit" class="btn btn-primary">Lưu nhật ký</button></div>' +
+      field("Chi phí (VNĐ)", '<input name="cost" type="number" min="0" required>') +
+      field("Hạn kiểm định tiếp theo", '<input name="nextDue" type="date" required>') +
+      field("Ghi chú", '<textarea name="note" placeholder="Ghi chú thêm (không bắt buộc)"></textarea>', true) +
+      '<div class="form-hint full">Hạn kiểm định tiếp theo sẽ tự cập nhật vào hồ sơ xe (hạn đăng kiểm).</div>' +
+      '<div class="form-actions full"><button type="button" class="btn btn-ghost" id="inspectionCancelBtn">Huỷ</button><button type="submit" class="btn btn-primary">Lưu bản ghi</button></div>' +
     '</form>';
-  openModal("Thêm nhật ký nhiên liệu", body, function (root) {
-    $("#fuelCancelBtn", root).addEventListener("click", closeModal);
-    $("#fuelForm", root).addEventListener("submit", function (e) {
+  openModal("Thêm bản ghi kiểm định", body, function (root) {
+    $("#inspectionCancelBtn", root).addEventListener("click", closeModal);
+    $("#inspectionForm", root).addEventListener("submit", function (e) {
       e.preventDefault();
       var f = new FormData(e.target);
-      DB.fuel.unshift({ id: uid("f"), vehicleId: f.get("vehicleId"), date: f.get("date"), liters: Number(f.get("liters")), price: Number(f.get("price")), odo: Number(f.get("odo")), station: (f.get("station") || "").trim() || "Chưa rõ" });
-      save(); closeModal(); toast("Đã lưu nhật ký nhiên liệu", "success"); state.maintSub = "fuel"; renderMaintenance();
+      var vehicleId = f.get("vehicleId");
+      var date = f.get("date");
+      var nextDue = f.get("nextDue") || "";
+      DB.maintenance.unshift({ id: uid("m"), vehicleId: vehicleId, type: INSPECTION_TYPE, date: date, odo: Number(f.get("odo")), cost: Number(f.get("cost")), nextDue: nextDue, note: (f.get("note") || "").trim() });
+      var v = getVehicle(vehicleId);
+      if (v) {
+        v.lastInspection = date;
+        if (nextDue) v.regExpiry = nextDue;
+      }
+      save(); closeModal(); toast("Đã lưu bản ghi kiểm định", "success"); renderInspection(); renderNotif(); renderView("vehicles");
     });
   });
 }
-document.addEventListener("click", function (e) {
-  if (e.target.closest('[data-action="new-service"]')) {
-    if (state.maintSub === "service") openServiceForm(); else openFuelForm();
-  }
-});
+document.addEventListener("click", function (e) { if (e.target.closest('[data-action="new-inspection"]')) openInspectionForm(); });
 
 /* ==========================================================================
    Reports
@@ -904,25 +724,23 @@ document.addEventListener("click", function (e) {
 function renderReports() {
   var months = lastMonths(6);
   var thisMonth = months[months.length - 1];
-  var fuelThisMonth = DB.fuel.filter(function (f) { return inSameMonth(f.date, thisMonth); }).reduce(function (s, f) { return s + f.liters * f.price; }, 0);
   var maintThisMonth = DB.maintenance.filter(function (m) { return inSameMonth(m.date, thisMonth); }).reduce(function (s, m) { return s + m.cost; }, 0);
-  var totalKmFuel = DB.fuel.length; // proxy metric: number of refuel logs, as a simple activity indicator
-  var activeRatio = Math.round(DB.vehicles.filter(function (v) { return v.status === "active"; }).length / DB.vehicles.length * 100);
+  var activeRatio = DB.vehicles.length ? Math.round(DB.vehicles.filter(function (v) { return v.status === "active"; }).length / DB.vehicles.length * 100) : 0;
+  var dueSoonCount = collectAlerts().length;
 
   $("#reportKpiGrid").innerHTML = [
-    { icon: "ic-droplet", tone: "info", label: "Chi phí nhiên liệu tháng này", value: fmtCurrency(fuelThisMonth) },
-    { icon: "ic-wrench", tone: "warning", label: "Chi phí bảo dưỡng tháng này", value: fmtCurrency(maintThisMonth) },
-    { icon: "ic-fuel-pump", tone: "primary", label: "Lượt đổ nhiên liệu (6 tháng)", value: totalKmFuel },
-    { icon: "ic-check", tone: "success", label: "Tỷ lệ xe hoạt động", value: activeRatio + "%" }
+    { icon: "ic-truck", tone: "primary", label: "Tổng số xe", value: DB.vehicles.length },
+    { icon: "ic-check", tone: "success", label: "Đang hoạt động", value: activeRatio + "%" },
+    { icon: "ic-alert", tone: "warning", label: "Sắp đến hạn (30 ngày)", value: dueSoonCount },
+    { icon: "ic-wrench", tone: "info", label: "Chi phí bảo dưỡng tháng này", value: fmtCurrency(maintThisMonth) }
   ].map(function (k) {
     return '<div class="kpi-card"><div class="kpi-top"><span class="kpi-icon" style="background:var(--color-' + k.tone + (k.tone === "primary" ? "-light" : "-bg") + ');color:var(--color-' + k.tone + ')"><svg class="icon"><use href="#' + k.icon + '"/></svg></span></div>' +
       '<span class="kpi-value">' + k.value + '</span><span class="kpi-label">' + k.label + '</span></div>';
   }).join("");
 
   var costPoints = months.map(function (m) {
-    var fuelSum = DB.fuel.filter(function (f) { return inSameMonth(f.date, m); }).reduce(function (s, f) { return s + f.liters * f.price; }, 0);
-    var maintSum = DB.maintenance.filter(function (mm) { return inSameMonth(mm.date, m); }).reduce(function (s, mm) { return s + mm.cost; }, 0);
-    return { label: monthLabel(m), value: fuelSum + maintSum };
+    var sum = DB.maintenance.filter(function (mm) { return inSameMonth(mm.date, m); }).reduce(function (s, mm) { return s + mm.cost; }, 0);
+    return { label: monthLabel(m), value: sum };
   });
   renderBarChart($("#reportCostChart"), costPoints, { valueFormatter: function (v) { return v >= 1000000 ? (v / 1000000).toFixed(1) + "tr" : v ? (v / 1000).toFixed(0) + "k" : "0"; } });
 
@@ -934,16 +752,15 @@ function renderReports() {
   }));
 
   var perVehicle = DB.vehicles.map(function (v) {
-    var fuelCost = DB.fuel.filter(function (f) { return f.vehicleId === v.id; }).reduce(function (s, f) { return s + f.liters * f.price; }, 0);
-    var maintCost = DB.maintenance.filter(function (m) { return m.vehicleId === v.id; }).reduce(function (s, m) { return s + m.cost; }, 0);
-    return { v: v, fuelCost: fuelCost, maintCost: maintCost, total: fuelCost + maintCost };
-  }).sort(function (a, b) { return b.total - a.total; });
+    var cost = DB.maintenance.filter(function (m) { return m.vehicleId === v.id; }).reduce(function (s, m) { return s + m.cost; }, 0);
+    return { v: v, cost: cost };
+  }).sort(function (a, b) { return b.cost - a.cost; });
 
-  $("#costByVehicleTable").innerHTML = '<thead><tr><th>Xe</th><th>Chi phí nhiên liệu</th><th>Chi phí bảo dưỡng</th><th>Tổng chi phí</th><th>Trạng thái</th></tr></thead><tbody>' +
+  $("#costByVehicleTable").innerHTML = '<thead><tr><th>Xe</th><th>Chi phí bảo dưỡng</th><th>Trạng thái</th></tr></thead><tbody>' +
     perVehicle.map(function (r) {
       var st = VEHICLE_STATUS[r.v.status];
       return '<tr><td class="cell-primary">' + escapeHtml(r.v.plate) + '<div class="cell-muted">' + escapeHtml(r.v.brand) + '</div></td>' +
-        '<td>' + fmtCurrency(r.fuelCost) + '</td><td>' + fmtCurrency(r.maintCost) + '</td><td class="cell-primary">' + fmtCurrency(r.total) + '</td><td>' + badge(st.tone, st.label) + '</td></tr>';
+        '<td class="cell-primary">' + fmtCurrency(r.cost) + '</td><td>' + badge(st.tone, st.label) + '</td></tr>';
     }).join("") + "</tbody>";
 }
 
@@ -973,8 +790,7 @@ $("#globalSearch").addEventListener("keydown", function (e) {
     renderDrivers();
     return;
   }
-  switchView("dispatch");
-  toast('Không tìm thấy "' + q + '" trong xe hoặc lái xe — hiển thị lệnh điều xe', undefined);
+  toast('Không tìm thấy "' + q + '" trong xe hoặc lái xe', undefined);
 });
 
 /* ==========================================================================
@@ -982,6 +798,6 @@ $("#globalSearch").addEventListener("keydown", function (e) {
    ========================================================================== */
 renderNotif();
 renderUnitScope();
-switchView("dashboard");
+switchView("vehicles");
 
 })();
