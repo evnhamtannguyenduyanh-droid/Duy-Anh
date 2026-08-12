@@ -10,8 +10,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&subset=vietnamese&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
 </head>
 <body>
+
+<!-- ============ LOADING OVERLAY ============ -->
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="loading-box">
+    <span class="spinner" aria-hidden="true"></span>
+    <p>Đang tải dữ liệu…</p>
+  </div>
+</div>
 
 <!-- ============ ICON SPRITE ============ -->
 <svg style="display:none" aria-hidden="true">
@@ -70,6 +79,7 @@
         <span>Phạm vi quản lý</span>
         <strong id="unitScope">—</strong>
       </div>
+      <div class="sync-status" id="syncStatus"></div>
     </div>
   </aside>
 

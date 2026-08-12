@@ -104,19 +104,77 @@ function buildSeedData() {
 /* ==========================================================================
    Persistence
    ========================================================================== */
-var DB = load();
-function load() {
+// API_URL trống -> chỉ lưu trên máy (localStorage). Có URL (điền trong config.js,
+// trỏ tới một Google Apps Script Web App) -> đọc/ghi vào nguồn dữ liệu dùng chung.
+var API_URL = (typeof window !== "undefined" && window.APP_CONFIG && window.APP_CONFIG.API_URL) || "";
+var SHEET_VEHICLES = "Vehicles";
+var SHEET_DRIVERS = "Drivers";
+var SHEET_MAINTENANCE = "Maintenance";
+
+var DB = { vehicles: [], drivers: [], maintenance: [] };
+
+function loadLocal() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch (e) { /* fall through to reseed */ }
-  var seed = buildSeedData();
-  save(seed);
-  return seed;
+  } catch (e) { /* corrupt cache, ignore */ }
+  return null;
 }
-function save(db) {
-  db = db || DB;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+function saveLocal() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+}
+
+function apiFetchAll() {
+  return fetch(API_URL).then(function (r) { return r.json(); });
+}
+function apiUpsert(sheet, record) {
+  if (!API_URL) return Promise.resolve();
+  return fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ sheet: sheet, action: "upsert", record: record })
+  }).then(function (r) { return r.json(); }).then(function (res) {
+    if (!res.success) throw new Error(res.error || "Lưu thất bại");
+  });
+}
+function apiDelete(sheet, id) {
+  if (!API_URL) return Promise.resolve();
+  return fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ sheet: sheet, action: "delete", id: id })
+  }).then(function (r) { return r.json(); }).then(function (res) {
+    if (!res.success) throw new Error(res.error || "Xoá thất bại");
+  });
+}
+function onSyncError(err) {
+  toast("Không đồng bộ được với dữ liệu dùng chung (" + (err && err.message ? err.message : "lỗi mạng") + "). Thay đổi đã lưu tạm trên máy này.", "danger");
+}
+
+function persistVehicle(rec) { saveLocal(); apiUpsert(SHEET_VEHICLES, rec).catch(onSyncError); }
+function persistVehicleDelete(id) { saveLocal(); apiDelete(SHEET_VEHICLES, id).catch(onSyncError); }
+function persistDriver(rec) { saveLocal(); apiUpsert(SHEET_DRIVERS, rec).catch(onSyncError); }
+function persistDriverDelete(id) { saveLocal(); apiDelete(SHEET_DRIVERS, id).catch(onSyncError); }
+function persistMaintenance(rec) { saveLocal(); apiUpsert(SHEET_MAINTENANCE, rec).catch(onSyncError); }
+function persistMaintenanceDelete(id) { saveLocal(); apiDelete(SHEET_MAINTENANCE, id).catch(onSyncError); }
+
+function refreshFromServer(callback) {
+  if (!API_URL) { if (callback) callback(); return; }
+  apiFetchAll().then(function (data) {
+    DB.vehicles = data.vehicles || [];
+    DB.drivers = data.drivers || [];
+    DB.maintenance = data.maintenance || [];
+    saveLocal();
+    if (callback) callback();
+  }).catch(function () { if (callback) callback(); });
+}
+
+function renderSyncStatus() {
+  var el = $("#syncStatus");
+  if (!el) return;
+  el.innerHTML = API_URL
+    ? badge("success", "Đồng bộ dữ liệu chung")
+    : badge("muted", "Chỉ lưu trên máy này");
 }
 
 function getVehicle(id) { return DB.vehicles.find(function (v) { return v.id === id; }); }
@@ -331,6 +389,10 @@ function switchView(view) {
   closeSidebar();
   renderView(view);
   $("#content").scrollTo({ top: 0, behavior: "auto" });
+  // Đồng bộ nền: nạp lại từ nguồn dữ liệu chung (nếu có cấu hình) để thấy thay đổi của người khác.
+  refreshFromServer(function () {
+    if (state.view === view) { renderView(view); renderNotif(); renderUnitScope(); }
+  });
 }
 $$(".nav-item").forEach(function (btn) { btn.addEventListener("click", function () { switchView(btn.dataset.view); }); });
 
@@ -477,7 +539,7 @@ function openVehicleForm(id) {
       } else {
         DB.vehicles.push(rec);
       }
-      save();
+      persistVehicle(rec);
       closeModal();
       toast(isEdit ? "Đã cập nhật hồ sơ xe " + rec.plate : "Đã thêm xe " + rec.plate, "success");
       renderView(state.view);
@@ -491,7 +553,7 @@ function confirmDeleteVehicle(id) {
   if (!v) return;
   if (!window.confirm('Xoá xe "' + v.plate + '" khỏi hệ thống? Thao tác này không thể hoàn tác.')) return;
   DB.vehicles = DB.vehicles.filter(function (x) { return x.id !== id; });
-  save();
+  persistVehicleDelete(id);
   toast("Đã xoá xe " + v.plate, "danger");
   renderView(state.view);
   renderUnitScope();
@@ -575,12 +637,14 @@ function openDriverForm(id) {
       else { DB.drivers.push(rec); }
 
       var newVehicleId = f.get("vehicleId") || "";
-      DB.vehicles.forEach(function (v) { if (v.driverId === id && v.id !== newVehicleId) v.driverId = ""; });
+      var changedVehicles = [];
+      DB.vehicles.forEach(function (v) { if (v.driverId === id && v.id !== newVehicleId) { v.driverId = ""; changedVehicles.push(v); } });
       if (newVehicleId) {
         var target = getVehicle(newVehicleId);
-        if (target) target.driverId = id;
+        if (target && target.driverId !== id) { target.driverId = id; changedVehicles.push(target); }
       }
-      save();
+      persistDriver(rec);
+      changedVehicles.forEach(function (v) { persistVehicle(v); });
       closeModal();
       toast(isEdit ? "Đã cập nhật hồ sơ " + rec.name : "Đã thêm lái xe " + rec.name, "success");
       renderView(state.view);
@@ -593,8 +657,10 @@ function confirmDeleteDriver(id) {
   if (!dr) return;
   if (!window.confirm('Xoá lái xe "' + dr.name + '" khỏi hệ thống?')) return;
   DB.drivers = DB.drivers.filter(function (x) { return x.id !== id; });
-  DB.vehicles.forEach(function (v) { if (v.driverId === id) v.driverId = ""; });
-  save();
+  var affectedVehicles = DB.vehicles.filter(function (v) { return v.driverId === id; });
+  affectedVehicles.forEach(function (v) { v.driverId = ""; });
+  persistDriverDelete(id);
+  affectedVehicles.forEach(function (v) { persistVehicle(v); });
   toast("Đã xoá lái xe " + dr.name, "danger");
   renderView(state.view);
 }
@@ -635,7 +701,7 @@ function renderMaintenance() {
       b.addEventListener("click", function () {
         if (!window.confirm("Xoá bản ghi bảo dưỡng này?")) return;
         DB.maintenance = DB.maintenance.filter(function (x) { return x.id !== b.dataset.id; });
-        save(); renderMaintenance(); renderNotif();
+        persistMaintenanceDelete(b.dataset.id); renderMaintenance(); renderNotif();
       });
     });
   }
@@ -657,8 +723,9 @@ function openServiceForm() {
     $("#serviceForm", root).addEventListener("submit", function (e) {
       e.preventDefault();
       var f = new FormData(e.target);
-      DB.maintenance.unshift({ id: uid("m"), vehicleId: f.get("vehicleId"), type: f.get("type"), date: f.get("date"), odo: Number(f.get("odo")), cost: Number(f.get("cost")), nextDue: f.get("nextDue") || "", note: (f.get("note") || "").trim() });
-      save(); closeModal(); toast("Đã lưu bản ghi bảo dưỡng", "success"); renderMaintenance(); renderNotif();
+      var rec = { id: uid("m"), vehicleId: f.get("vehicleId"), type: f.get("type"), date: f.get("date"), odo: Number(f.get("odo")), cost: Number(f.get("cost")), nextDue: f.get("nextDue") || "", note: (f.get("note") || "").trim() };
+      DB.maintenance.unshift(rec);
+      persistMaintenance(rec); closeModal(); toast("Đã lưu bản ghi bảo dưỡng", "success"); renderMaintenance(); renderNotif();
     });
   });
 }
@@ -681,7 +748,7 @@ function renderInspection() {
       b.addEventListener("click", function () {
         if (!window.confirm("Xoá bản ghi kiểm định này?")) return;
         DB.maintenance = DB.maintenance.filter(function (x) { return x.id !== b.dataset.id; });
-        save(); renderInspection(); renderNotif();
+        persistMaintenanceDelete(b.dataset.id); renderInspection(); renderNotif();
       });
     });
   }
@@ -706,13 +773,16 @@ function openInspectionForm() {
       var vehicleId = f.get("vehicleId");
       var date = f.get("date");
       var nextDue = f.get("nextDue") || "";
-      DB.maintenance.unshift({ id: uid("m"), vehicleId: vehicleId, type: INSPECTION_TYPE, date: date, odo: Number(f.get("odo")), cost: Number(f.get("cost")), nextDue: nextDue, note: (f.get("note") || "").trim() });
+      var rec = { id: uid("m"), vehicleId: vehicleId, type: INSPECTION_TYPE, date: date, odo: Number(f.get("odo")), cost: Number(f.get("cost")), nextDue: nextDue, note: (f.get("note") || "").trim() };
+      DB.maintenance.unshift(rec);
+      persistMaintenance(rec);
       var v = getVehicle(vehicleId);
       if (v) {
         v.lastInspection = date;
         if (nextDue) v.regExpiry = nextDue;
+        persistVehicle(v);
       }
-      save(); closeModal(); toast("Đã lưu bản ghi kiểm định", "success"); renderInspection(); renderNotif(); renderView("vehicles");
+      closeModal(); toast("Đã lưu bản ghi kiểm định", "success"); renderInspection(); renderNotif(); renderView("vehicles");
     });
   });
 }
@@ -796,8 +866,45 @@ $("#globalSearch").addEventListener("keydown", function (e) {
 /* ==========================================================================
    Init
    ========================================================================== */
-renderNotif();
-renderUnitScope();
-switchView("vehicles");
+function showLoading(on) { var el = $("#loadingOverlay"); if (el) el.hidden = !on; }
+
+function afterLoad() {
+  renderSyncStatus();
+  renderNotif();
+  renderUnitScope();
+  switchView("vehicles");
+}
+
+function initApp() {
+  var cached = loadLocal();
+  if (cached) {
+    DB = cached;
+    afterLoad();
+    return;
+  }
+  if (API_URL) {
+    showLoading(true);
+    apiFetchAll().then(function (data) {
+      DB.vehicles = data.vehicles || [];
+      DB.drivers = data.drivers || [];
+      DB.maintenance = data.maintenance || [];
+      saveLocal();
+      showLoading(false);
+      afterLoad();
+    }).catch(function () {
+      DB = buildSeedData();
+      saveLocal();
+      showLoading(false);
+      toast("Không kết nối được dữ liệu dùng chung — đang dùng dữ liệu mẫu tạm thời trên máy này", "danger");
+      afterLoad();
+    });
+  } else {
+    DB = buildSeedData();
+    saveLocal();
+    afterLoad();
+  }
+}
+
+initApp();
 
 })();
