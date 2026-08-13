@@ -204,7 +204,7 @@ function getDriver(id) { return DB.drivers.find(function (dr) { return dr.id ===
 /* ==========================================================================
    Global UI state
    ========================================================================== */
-var state = { view: "vehicles", lastFocused: null, vehicleDetailId: null, vehicleDetailTab: "canh-bao", vehicleSelectMode: false, selectedVehicleIds: [], vehicleToneFilter: "" };
+var state = { view: "vehicles", lastFocused: null, vehicleDetailId: null, vehicleDetailTab: "canh-bao", vehicleToneFilter: "" };
 
 var $ = function (sel, root) { return (root || document).querySelector(sel); };
 var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -474,11 +474,9 @@ function vehicleCardHtml(v) {
   var bh = dateAlertStatus(v.insuranceExpiry);
   var bd1 = kmAlertStatus(v.odo, v.kmBD1, g.cap1);
   var bd2 = kmAlertStatus(v.odo, v.kmBD2, g.cap2);
-  var selected = state.selectedVehicleIds.indexOf(v.id) > -1;
-  return '<div class="vehicle-card' + (selected ? " is-selected" : "") + '" data-action="view-vehicle" data-id="' + v.id + '" tabindex="0" role="button">' +
+  return '<div class="vehicle-card" data-action="view-vehicle" data-id="' + v.id + '" tabindex="0" role="button">' +
     '<div class="vehicle-card-top">' +
       '<div class="vehicle-card-main">' +
-        (state.vehicleSelectMode ? '<input type="checkbox" class="vehicle-card-check" data-select-id="' + v.id + '"' + (selected ? " checked" : "") + '>' : '') +
         '<span class="vehicle-icon"><svg class="icon"><use href="#ic-truck"/></svg></span>' +
         '<div><div class="plate">' + escapeHtml(v.plate) + '</div><div class="vname">' + escapeHtml(v.brand) + ' — ' + escapeHtml(v.type) + '</div></div>' +
       '</div>' +
@@ -526,7 +524,8 @@ function renderVehicles() {
   var chipDefs = [
     { tone: "danger", label: "Cần xử lý ngay" },
     { tone: "warning", label: "Sắp đến hạn" },
-    { tone: "success", label: "Bình thường" }
+    { tone: "success", label: "Bình thường" },
+    { tone: "muted", label: "Thiếu dữ liệu" }
   ];
   strip.innerHTML = chipDefs.map(function (c) {
     var active = state.vehicleToneFilter === c.tone;
@@ -555,20 +554,12 @@ function renderVehicles() {
   }
 
   $$('[data-action="view-vehicle"]', root).forEach(function (card) {
-    card.addEventListener("click", function () {
-      if (state.vehicleSelectMode) { toggleVehicleSelection(card.dataset.id); return; }
-      openVehicleDetail(card.dataset.id);
-    });
+    card.addEventListener("click", function () { openVehicleDetail(card.dataset.id); });
     card.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
-      if (state.vehicleSelectMode) { toggleVehicleSelection(card.dataset.id); return; }
       openVehicleDetail(card.dataset.id);
     });
-  });
-  $$('[data-select-id]', root).forEach(function (cb) {
-    cb.addEventListener("click", function (e) { e.stopPropagation(); });
-    cb.addEventListener("change", function (e) { e.stopPropagation(); toggleVehicleSelection(cb.dataset.selectId); });
   });
 }
 $("#vehicleSearch").addEventListener("input", debounce(renderVehicles, 150));
@@ -580,32 +571,51 @@ function setVehicleToneFilter(tone) {
   renderVehicles();
 }
 
-/* ---------- Chọn nhiều xe + xuất Excel ---------- */
-function toggleVehicleSelection(id) {
-  var idx = state.selectedVehicleIds.indexOf(id);
-  if (idx > -1) state.selectedVehicleIds.splice(idx, 1); else state.selectedVehicleIds.push(id);
-  var card = $('.vehicle-card[data-id="' + id + '"]');
-  if (card) {
-    var isSel = state.selectedVehicleIds.indexOf(id) > -1;
-    card.classList.toggle("is-selected", isSel);
-    var cb = $('[data-select-id="' + id + '"]', card);
-    if (cb) cb.checked = isSel;
-  }
-  updateSelectBar();
-}
-function updateSelectBar() {
-  var n = state.selectedVehicleIds.length;
-  $("#vehicleSelectCount").textContent = "Đã chọn " + n + " xe";
-}
-function setVehicleSelectMode(on) {
-  state.vehicleSelectMode = on;
-  if (!on) state.selectedVehicleIds = [];
-  $("#toggleSelectBtn").textContent = on ? "Đang chọn…" : "Chọn nhiều";
-  $("#toggleSelectBtn").classList.toggle("btn-primary", on);
-  $("#toggleSelectBtn").classList.toggle("btn-ghost", !on);
-  $("#vehicleSelectBar").hidden = !on;
-  updateSelectBar();
-  renderVehicles();
+/* ---------- Xuất Excel: chọn từng xe / nhiều xe / tất cả ---------- */
+function openExportModal() {
+  var sites = Array.from(new Set(DB.vehicles.map(function (v) { return v.site || "Chưa phân cơ sở"; }))).sort();
+  var body =
+    '<label class="export-select-all"><input type="checkbox" id="exportSelectAll"> <b>Chọn tất cả</b> (' + DB.vehicles.length + ' xe)</label>' +
+    '<div class="export-picker">' +
+      sites.map(function (site) {
+        var group = DB.vehicles.filter(function (v) { return (v.site || "Chưa phân cơ sở") === site; });
+        return '<div class="export-site-group">' +
+          '<div class="export-site-title">' + escapeHtml(site) + ' (' + group.length + ' xe)</div>' +
+          group.map(function (v) {
+            return '<label class="export-vehicle-row"><input type="checkbox" class="export-vehicle-check" data-id="' + v.id + '"><span class="export-vehicle-plate">' + escapeHtml(v.plate) + '</span><span class="export-vehicle-name">' + escapeHtml(v.brand) + '</span></label>';
+          }).join("") +
+        '</div>';
+      }).join("") +
+    '</div>' +
+    '<div class="form-actions full">' +
+      '<button type="button" class="btn btn-ghost" id="exportCancelBtn">Huỷ</button>' +
+      '<button type="button" class="btn btn-primary" id="exportConfirmBtn">Xuất Excel (<span id="exportCount">0</span> xe)</button>' +
+    '</div>';
+
+  openModal("Chọn xe để xuất Excel", body, function (root) {
+    var checks = $$('.export-vehicle-check', root);
+    var selectAll = $("#exportSelectAll", root);
+    function updateCount() {
+      var n = checks.filter(function (c) { return c.checked; }).length;
+      $("#exportCount", root).textContent = n;
+      selectAll.checked = n > 0 && n === checks.length;
+      selectAll.indeterminate = n > 0 && n < checks.length;
+    }
+    checks.forEach(function (c) { c.addEventListener("change", updateCount); });
+    selectAll.addEventListener("change", function () {
+      checks.forEach(function (c) { c.checked = selectAll.checked; });
+      updateCount();
+    });
+    $("#exportCancelBtn", root).addEventListener("click", closeModal);
+    $("#exportConfirmBtn", root).addEventListener("click", function () {
+      var ids = checks.filter(function (c) { return c.checked; }).map(function (c) { return c.dataset.id; });
+      if (!ids.length) { toast("Chưa chọn xe nào.", "danger"); return; }
+      var list = DB.vehicles.filter(function (v) { return ids.indexOf(v.id) > -1; });
+      exportVehiclesToExcel(list, ids.length === DB.vehicles.length ? "tat-ca" : "da-chon");
+      closeModal();
+    });
+    updateCount();
+  });
 }
 function vehicleExportRows(list) {
   return list.map(function (v) {
@@ -643,18 +653,8 @@ function exportVehiclesToExcel(list, filenameSuffix) {
   XLSX.writeFile(wb, "Danh_sach_xe_PCLD_" + filenameSuffix + "_" + today + ".xlsx");
   toast("Đã xuất " + list.length + " xe ra Excel.", "success");
 }
-function exportCurrentListToExcel() { exportVehiclesToExcel(getFilteredVehicles(), "loc"); }
-function exportSelectedToExcel() {
-  if (!state.selectedVehicleIds.length) { toast("Chưa chọn xe nào.", "danger"); return; }
-  var ids = state.selectedVehicleIds;
-  var list = DB.vehicles.filter(function (v) { return ids.indexOf(v.id) > -1; });
-  exportVehiclesToExcel(list, "da-chon");
-}
 $("#content").addEventListener("click", function (e) {
-  if (e.target.closest('[data-action="toggle-select-mode"]')) setVehicleSelectMode(!state.vehicleSelectMode);
-  else if (e.target.closest('[data-action="select-cancel"]')) setVehicleSelectMode(false);
-  else if (e.target.closest('[data-action="export-excel"]')) exportCurrentListToExcel();
-  else if (e.target.closest('[data-action="export-selected"]')) exportSelectedToExcel();
+  if (e.target.closest('[data-action="export-excel"]')) openExportModal();
 });
 
 function driverOptionsHtml(selectedId) {
