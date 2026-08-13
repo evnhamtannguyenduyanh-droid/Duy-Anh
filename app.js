@@ -63,9 +63,6 @@ function initials(name) {
 function badge(tone, label) {
   return '<span class="badge-pill badge-' + tone + '">' + escapeHtml(label) + "</span>";
 }
-function monthLabel(d) {
-  return "Th " + (d.getMonth() + 1);
-}
 
 /* ==========================================================================
    Seed data — generated relative to "today" so the demo always looks fresh
@@ -74,24 +71,48 @@ function buildSeedData() {
   // Dữ liệu xe thật, trích xuất từ hồ sơ cập nhật của Văn phòng PCLĐ:
   // "2026.08.07 Cap nhat Ho so xe VP_Co so 2.xlsx" (Cơ sở 2 — PC Bình Thuận, 9 xe)
   // "Backup_TatCaXe_VP Cong CS3_2026-08-06.xlsx" (Cơ sở 3 — PC Đắk Nông / PC Lâm Đồng, 6 xe)
+  // "Backup_Danh_Muc_Quan_Ly_Cong_Xa_Lam_Dong_TSC_23_Xe 8-2026.xlsx" (Trụ sở chính, 22 xe mới —
+  //   xe 86A-181.81 trong file này trùng với v6 nên chỉ cập nhật lại số km/hạn đăng kiểm, không thêm mới).
   // Lưu ý: xe 48A-088.82 — tab gốc trong file ghi "48A-088.92", nhưng dòng tiêu đề và
   // bảng tổng hợp trong cùng file đều ghi "48A-088.82" — đã dùng bản ghi đa số, cần đối chiếu lại cà-vẹt.
   var vehicles = [
-    { id: "v1", plate: "86H-0711", type: "Xe con 8-9 chỗ", brand: "Toyota Land Cruiser", year: 2001, odo: 462820, status: "active", regExpiry: "2026-05-13", lastInspection: "2025-05-14", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "24 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 450.102 km, cấp 2 ở 456.314 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v2", plate: "86A-016.98", type: "Xe con 7 chỗ", brand: "Toyota Fortuner", year: 2013, odo: 349697, status: "active", regExpiry: "2026-08-12", lastInspection: "2025-09-12", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "17 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 337.190 km, cấp 2 ở 343.490 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v3", plate: "86A-275.58", type: "Xe con 7 chỗ", brand: "Toyota Fortuner", year: 2023, odo: 76000, status: "active", regExpiry: "2026-12-28", lastInspection: "2023-12-29", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "17 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 72.508 km, cấp 2 ở 67.320 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v4", plate: "86H-3885", type: "Xe bán tải", brand: "Isuzu D-Max", year: 2008, odo: 30038, status: "active", regExpiry: "2026-09-09", lastInspection: "2026-10-03", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "14 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 28.113 km, cấp 2 ở 19.985 km (ngưỡng 5.000 km / 30.000 km — Xe con/ Xe bán tải)." },
-    { id: "v5", plate: "86C-031.86", type: "Xe tải thùng kín", brand: "Isuzu NPR85LK Cab", year: 2013, odo: 126429, status: "active", regExpiry: "2026-08-24", lastInspection: "2026-02-25", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "19 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 124.861 km, cấp 2 ở 120.684 km (ngưỡng 4.000 km / 80.000 km — Xe con / Xe tải)." },
-    { id: "v6", plate: "86A-181.81", type: "Xe con 7 chỗ", brand: "Hyundai Santa Fe", year: 2020, odo: 99839, status: "active", regExpiry: "2028-04-18", lastInspection: "2026-10-19", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "15 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 89.372 km, cấp 2 ở 95.172 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v7", plate: "86B-014.73", type: "Xe khách 16 chỗ", brand: "Hyundai Solati", year: 2019, odo: 86449, status: "active", regExpiry: "2027-01-07", lastInspection: "2026-07-08", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "17 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 77.119 km, cấp 2 ở 81.714 km (ngưỡng 5.000 km / 30.000 km — Xe ô tô 04 đến 16 chỗ)." },
-    { id: "v8", plate: "86A-015.56", type: "Xe con 5 chỗ", brand: "Honda Civic", year: 2013, odo: 273028, status: "active", regExpiry: "2026-12-03", lastInspection: "2025-12-04", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "12 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 272.886 km, cấp 2 ở 265.791 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v9", plate: "86A-086.15", type: "Xe con 7 chỗ", brand: "Nissan X-Trail", year: 2018, odo: 149817, status: "active", regExpiry: "2027-03-17", lastInspection: "2026-03-18", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "16 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 141.888 km, cấp 2 ở 134.965 km (ngưỡng 5.000 km / 80.000 km — Xe con)." },
-    { id: "v10", plate: "48A-088.82", type: "Xe con 7 chỗ", brand: "Nissan X-Trail", year: 2019, odo: 121216, status: "active", regExpiry: "2027-11-04", lastInspection: "2025-11-05", insuranceStart: "2026-01-31", insuranceExpiry: "2027-01-30", driverId: "", owner: "Công ty Điện lực Đắk Nông", site: "CS3", fuelNorm: "16 lít/100km", note: "Đăng ký tại: Số 02 Lê Duẩn, phường Nghĩa Tân, TP Gia Nghĩa, tỉnh Đắk Nông. Bảo dưỡng gần nhất: cấp 1 ở 120.000 km, cấp 2 ở 120.000 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v11", plate: "49A-995.16", type: "Xe khách 16 chỗ", brand: "Ford Transit", year: 2018, odo: 295330, status: "active", regExpiry: "2026-10-13", lastInspection: "2026-04-14", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "20 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 295.000 km, cấp 2 ở 270.000 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v12", plate: "49A-996.67", type: "Xe tải cẩu (gầu)", brand: "Hino FG8", year: 2016, odo: 142912, status: "active", regExpiry: "2026-12-22", lastInspection: "2026-06-23", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "27 lít/100km + 7 lít/giờ cẩu", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 140.000 km, cấp 2 ở 120.000 km (ngưỡng 4.000 km / 24.000 km — xe cẩu)." },
-    { id: "v13", plate: "49B-172.35", type: "Xe con 7 chỗ", brand: "Mitsubishi Pajero", year: 2004, odo: 919636, status: "active", regExpiry: "2026-09-22", lastInspection: "2026-03-24", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "21 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 915.000 km, cấp 2 ở 900.000 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v14", plate: "49B-172.63", type: "Xe con 8-9 chỗ", brand: "Hyundai Starex", year: 2016, odo: 371699, status: "active", regExpiry: "2027-07-06", lastInspection: "2026-07-07", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "18 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 370.000 km, cấp 2 ở 360.000 km (ngưỡng 5.000 km / 30.000 km — Xe con)." },
-    { id: "v15", plate: "49B-173.07", type: "Xe con 5 chỗ", brand: "Toyota Camry", year: 2010, odo: 470178, status: "active", regExpiry: "2027-03-10", lastInspection: "2026-03-11", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "20 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 470.000 km, cấp 2 ở 450.000 km (ngưỡng 5.000 km / 30.000 km — Xe con)." }
+    { id: "v1", plate: "86H-0711", type: "Xe con 8-9 chỗ", brand: "Toyota Land Cruiser", year: 2001, odo: 462820, status: "active", regExpiry: "2026-05-13", lastInspection: "2025-05-14", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "24 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 450.102 km, cấp 2 ở 456.314 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 450102, kmBD2: 456314 },
+    { id: "v2", plate: "86A-016.98", type: "Xe con 7 chỗ", brand: "Toyota Fortuner", year: 2013, odo: 349697, status: "active", regExpiry: "2026-08-12", lastInspection: "2025-09-12", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "17 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 337.190 km, cấp 2 ở 343.490 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 337190, kmBD2: 343490 },
+    { id: "v3", plate: "86A-275.58", type: "Xe con 7 chỗ", brand: "Toyota Fortuner", year: 2023, odo: 76000, status: "active", regExpiry: "2026-12-28", lastInspection: "2023-12-29", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "17 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 72.508 km, cấp 2 ở 67.320 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 72508, kmBD2: 67320 },
+    { id: "v4", plate: "86H-3885", type: "Xe bán tải", brand: "Isuzu D-Max", year: 2008, odo: 30038, status: "active", regExpiry: "2026-09-09", lastInspection: "2026-10-03", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "14 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 28.113 km, cấp 2 ở 19.985 km (ngưỡng 5.000 km / 30.000 km — Xe con/ Xe bán tải).", kmBD1: 28113, kmBD2: 19985 },
+    { id: "v5", plate: "86C-031.86", type: "Xe tải thùng kín", brand: "Isuzu NPR85LK Cab", year: 2013, odo: 126429, status: "active", regExpiry: "2026-08-24", lastInspection: "2026-02-25", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "19 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 124.861 km, cấp 2 ở 120.684 km (ngưỡng 4.000 km / 80.000 km — Xe con / Xe tải).", kmBD1: 124861, kmBD2: 120684 },
+    { id: "v6", plate: "86A-181.81", type: "Xe con 7 chỗ", brand: "Hyundai Santa Fe", year: 2020, odo: 99843, status: "active", regExpiry: "2028-04-01", lastInspection: "2026-10-19", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "15 lít/100km", note: "Đăng ký tại: Tôn Đức Thắng, Xuân An, Phan Thiết, Bình Thuận (theo danh mục hợp nhất TSC 8-2026). Bảo dưỡng gần nhất: cấp 1 ở 95.000 km.", kmBD1: 95000, kmBD2: 95172 },
+    { id: "v7", plate: "86B-014.73", type: "Xe khách 16 chỗ", brand: "Hyundai Solati", year: 2019, odo: 86449, status: "active", regExpiry: "2027-01-07", lastInspection: "2026-07-08", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "17 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 77.119 km, cấp 2 ở 81.714 km (ngưỡng 5.000 km / 30.000 km — Xe ô tô 04 đến 16 chỗ).", kmBD1: 77119, kmBD2: 81714 },
+    { id: "v8", plate: "86A-015.56", type: "Xe con 5 chỗ", brand: "Honda Civic", year: 2013, odo: 273028, status: "active", regExpiry: "2026-12-03", lastInspection: "2025-12-04", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "12 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 272.886 km, cấp 2 ở 265.791 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 272886, kmBD2: 265791 },
+    { id: "v9", plate: "86A-086.15", type: "Xe con 7 chỗ", brand: "Nissan X-Trail", year: 2018, odo: 149817, status: "active", regExpiry: "2027-03-17", lastInspection: "2026-03-18", insuranceStart: "2026-06-30", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "CS2", fuelNorm: "16 lít/100km", note: "Đăng ký tại: ĐL T.Đ.Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 141.888 km, cấp 2 ở 134.965 km (ngưỡng 5.000 km / 80.000 km — Xe con).", kmBD1: 141888, kmBD2: 134965 },
+    { id: "v10", plate: "48A-088.82", type: "Xe con 7 chỗ", brand: "Nissan X-Trail", year: 2019, odo: 121216, status: "active", regExpiry: "2027-11-04", lastInspection: "2025-11-05", insuranceStart: "2026-01-31", insuranceExpiry: "2027-01-30", driverId: "", owner: "Công ty Điện lực Đắk Nông", site: "CS3", fuelNorm: "16 lít/100km", note: "Đăng ký tại: Số 02 Lê Duẩn, phường Nghĩa Tân, TP Gia Nghĩa, tỉnh Đắk Nông. Bảo dưỡng gần nhất: cấp 1 ở 120.000 km, cấp 2 ở 120.000 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 120000, kmBD2: 120000 },
+    { id: "v11", plate: "49A-995.16", type: "Xe khách 16 chỗ", brand: "Ford Transit", year: 2018, odo: 295330, status: "active", regExpiry: "2026-10-13", lastInspection: "2026-04-14", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "20 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 295.000 km, cấp 2 ở 270.000 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 295000, kmBD2: 270000 },
+    { id: "v12", plate: "49A-996.67", type: "Xe tải cẩu (gầu)", brand: "Hino FG8", year: 2016, odo: 142912, status: "active", regExpiry: "2026-12-22", lastInspection: "2026-06-23", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "27 lít/100km + 7 lít/giờ cẩu", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 140.000 km, cấp 2 ở 120.000 km (ngưỡng 4.000 km / 24.000 km — xe cẩu).", kmBD1: 140000, kmBD2: 120000 },
+    { id: "v13", plate: "49B-172.35", type: "Xe con 7 chỗ", brand: "Mitsubishi Pajero", year: 2004, odo: 919636, status: "active", regExpiry: "2026-09-22", lastInspection: "2026-03-24", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "21 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 915.000 km, cấp 2 ở 900.000 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 915000, kmBD2: 900000 },
+    { id: "v14", plate: "49B-172.63", type: "Xe con 8-9 chỗ", brand: "Hyundai Starex", year: 2016, odo: 371699, status: "active", regExpiry: "2027-07-06", lastInspection: "2026-07-07", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "18 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 370.000 km, cấp 2 ở 360.000 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 370000, kmBD2: 360000 },
+    { id: "v15", plate: "49B-173.07", type: "Xe con 5 chỗ", brand: "Toyota Camry", year: 2010, odo: 470178, status: "active", regExpiry: "2027-03-10", lastInspection: "2026-03-11", insuranceStart: "2025-12-31", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "CS3", fuelNorm: "20 lít/100km", note: "Đăng ký tại: Số 02 Hùng Vương, phường Xuân Hương - Đà Lạt, tỉnh Lâm Đồng. Bảo dưỡng gần nhất: cấp 1 ở 470.000 km, cấp 2 ở 450.000 km (ngưỡng 5.000 km / 30.000 km — Xe con).", kmBD1: 470000, kmBD2: 450000 },
+    { id: "v16", plate: "49B-1036", type: "Xe con 5 chỗ", brand: "Toyota Camry", year: 2004, odo: 513687, status: "active", regExpiry: "2026-08-31", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "16 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 497.632 km.", kmBD1: 497632, kmBD2: null },
+    { id: "v17", plate: "49A-175.44", type: "Xe con 8-9 chỗ", brand: "Hyundai", year: 2017, odo: 460070, status: "active", regExpiry: "2027-07-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 200.362 km.", kmBD1: 200362, kmBD2: null },
+    { id: "v18", plate: "49A-233.91", type: "Xe con 7 chỗ", brand: "Chevrolet Trailblazer", year: 2018, odo: 165293, status: "active", regExpiry: "2027-05-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "18 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 131.710 km.", kmBD1: 131710, kmBD2: null },
+    { id: "v19", plate: "49A-555.32", type: "Xe con 5 chỗ", brand: "Mazda CX-5", year: 2022, odo: 139498, status: "active", regExpiry: "2027-06-24", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "19 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt.", kmBD1: null, kmBD2: null },
+    { id: "v20", plate: "51F-549.16", type: "Xe con 7 chỗ", brand: "Toyota Fortuner", year: 2015, odo: 436667, status: "active", regExpiry: "2027-05-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Tổng Công ty Điện lực miền Nam", site: "TSC", fuelNorm: "19 lít/100km", note: "Đăng ký tại: số 72 Hai Bà Trưng, phường Bến Nghé, quận 1, Thành phố Hồ Chí Minh. Bảo dưỡng gần nhất: cấp 1 ở 422.550 km.", kmBD1: 422550, kmBD2: null },
+    { id: "v21", plate: "49B-0761", type: "Xe con 7 chỗ", brand: "Toyota Land Cruiser", year: 2002, odo: 736278, status: "active", regExpiry: "2026-08-03", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "26 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 713.248 km.", kmBD1: 713248, kmBD2: null },
+    { id: "v22", plate: "49A-144.92", type: "Xe con 5 chỗ", brand: "Toyota Corolla", year: 2012, odo: 378826, status: "active", regExpiry: "2026-09-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "14 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 351.184 km.", kmBD1: 351184, kmBD2: null },
+    { id: "v23", plate: "49A-086.29", type: "Xe con 5 chỗ", brand: "Mazda CX-5", year: 2014, odo: 396280, status: "active", regExpiry: "2026-10-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 390.000 km.", kmBD1: 390000, kmBD2: null },
+    { id: "v24", plate: "49C-202.50", type: "Xe bán tải", brand: "Toyota Hilux", year: 2019, odo: 153976, status: "active", regExpiry: "2027-05-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "16 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 143.104 km.", kmBD1: 143104, kmBD2: null },
+    { id: "v25", plate: "49B-017.75", type: "Xe khách 16 chỗ", brand: "Toyota Hiace", year: 2019, odo: 156927, status: "active", regExpiry: "2026-11-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "18 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 150.398 km.", kmBD1: 150398, kmBD2: null },
+    { id: "v26", plate: "49M-000.22", type: "Xe khách 16 chỗ", brand: "Toyota Hiace", year: 2007, odo: 595665, status: "active", regExpiry: "2026-09-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 576.308 km.", kmBD1: 576308, kmBD2: null },
+    { id: "v27", plate: "49M-000.23", type: "Xe khách 16 chỗ", brand: "Toyota Hiace", year: 2008, odo: 587584, status: "active", regExpiry: "2026-10-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 580.971 km.", kmBD1: 580971, kmBD2: null },
+    { id: "v28", plate: "49B-011.60", type: "Xe khách 16 chỗ", brand: "Toyota Hiace", year: 2012, odo: 495595, status: "active", regExpiry: "2026-10-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 560.230 km.", kmBD1: 560230, kmBD2: null },
+    { id: "v29", plate: "49C-236.63", type: "Xe tải thùng kín", brand: "Hino", year: "", odo: 110046, status: "active", regExpiry: "2026-08-24", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "22 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 101.428 km.", kmBD1: 101428, kmBD2: null },
+    { id: "v30", plate: "86A-275.75", type: "Xe con 5 chỗ", brand: "Toyota", year: 2019, odo: 59675, status: "active", regExpiry: "2026-12-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: Tôn Đức Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 55.108 km.", kmBD1: 55108, kmBD2: null },
+    { id: "v31", plate: "48A-101.60", type: "Xe con 7 chỗ", brand: "Toyota Land Cruiser", year: 2020, odo: 357965, status: "active", regExpiry: "2026-11-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Đắk Nông", site: "TSC", fuelNorm: "25.5 lít/100km", note: "Đăng ký tại: Tổ 3, đường Lê Duẩn, Phường Nghĩa Tân, Thành phố Gia Nghĩa, Tỉnh Đắk Nông. Bảo dưỡng gần nhất: cấp 2 ở 33.500 km.", kmBD1: null, kmBD2: 33500 },
+    { id: "v32", plate: "86B-016.75", type: "Xe khách 16 chỗ", brand: "Hyundai Solati", year: 2024, odo: 62470, status: "active", regExpiry: "2026-12-28", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Bình Thuận", site: "TSC", fuelNorm: "16 lít/100km", note: "Đăng ký tại: Tôn Đức Thắng, Xuân An, Phan Thiết, Bình Thuận. Bảo dưỡng gần nhất: cấp 1 ở 56.000 km.", kmBD1: 56000, kmBD2: null },
+    { id: "v33", plate: "49C-059.92", type: "Xe tải thùng kín", brand: "Thaco 600kg", year: 2015, odo: 40341, status: "active", regExpiry: "2026-09-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Lâm Đồng", site: "TSC", fuelNorm: "12 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường 10, Thành phố Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 38.420 km.", kmBD1: 38420, kmBD2: null },
+    { id: "v34", plate: "48A-024.18", type: "Xe con 7 chỗ", brand: "Toyota Fortuner", year: 2012, odo: 273607, status: "active", regExpiry: "2027-03-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Đắk Nông", site: "TSC", fuelNorm: "20 lít/100km", note: "Đăng ký tại: Tổ 3, đường Lê Duẩn, Phường Nghĩa Tân, Thành phố Gia Nghĩa, Tỉnh Đắk Nông. Bảo dưỡng gần nhất: cấp 1 ở 640.000 km.", kmBD1: 640000, kmBD2: null },
+    { id: "v35", plate: "49B-174.67", type: "Xe con 7 chỗ", brand: "Ford Everest", year: 2025, odo: 75162, status: "active", regExpiry: "2028-03-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Đắk Nông", site: "TSC", fuelNorm: "18 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường Xuân Hương - Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 70.000 km.", kmBD1: 70000, kmBD2: null },
+    { id: "v36", plate: "49B-175.83", type: "Xe con 7 chỗ", brand: "Mitsubishi Pajero", year: 2016, odo: 450829, status: "active", regExpiry: "2027-03-04", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Đắk Nông", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường Xuân Hương - Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 440.000 km.", kmBD1: 440000, kmBD2: null },
+    { id: "v37", plate: "48A-078.62", type: "Xe con 7 chỗ", brand: "Mitsubishi Outlander", year: 2019, odo: 231839, status: "active", regExpiry: "2027-07-01", lastInspection: "", insuranceStart: "2026-01-01", insuranceExpiry: "2026-12-31", driverId: "", owner: "Công ty Điện lực Đắk Nông", site: "TSC", fuelNorm: "17 lít/100km", note: "Đăng ký tại: 02 Hùng Vương, Phường Xuân Hương - Đà Lạt. Bảo dưỡng gần nhất: cấp 1 ở 230.000 km.", kmBD1: 230000, kmBD2: null }
   ];
 
   // Chưa có dữ liệu lái xe / bảo dưỡng / kiểm định thật — để trống, tự nhập qua giao diện.
@@ -183,7 +204,7 @@ function getDriver(id) { return DB.drivers.find(function (dr) { return dr.id ===
 /* ==========================================================================
    Global UI state
    ========================================================================== */
-var state = { view: "vehicles", lastFocused: null };
+var state = { view: "vehicles", lastFocused: null, vehicleDetailId: null, vehicleDetailTab: "canh-bao", vehicleSelectMode: false, selectedVehicleIds: [], vehicleToneFilter: "" };
 
 var $ = function (sel, root) { return (root || document).querySelector(sel); };
 var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -286,22 +307,6 @@ function renderDonutChart(container, segments) {
   container.innerHTML = '<div style="display:flex;align-items:center;">' + svg + legend + "</div>";
 }
 
-/* ==========================================================================
-   Last N months bucketing (maintenance costs)
-   ========================================================================== */
-function lastMonths(n) {
-  var out = [];
-  var now = new Date();
-  for (var i = n - 1; i >= 0; i--) {
-    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    out.push(d);
-  }
-  return out;
-}
-function inSameMonth(iso, ref) {
-  var d = new Date(iso + "T00:00:00");
-  return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
-}
 
 /* ==========================================================================
    Notifications (upcoming / overdue registration, license, insurance, maintenance)
@@ -377,7 +382,7 @@ var PAGE_META = {
   drivers: { title: "Lái xe", sub: "Hồ sơ lái xe và phân công phương tiện" },
   maintenance: { title: "Bảo dưỡng", sub: "Lịch sử bảo dưỡng định kỳ và sửa chữa" },
   inspection: { title: "Kiểm định", sub: "Lịch sử đăng kiểm và hạn kiểm định" },
-  reports: { title: "Báo cáo", sub: "Chi phí bảo dưỡng và tình trạng đội xe" }
+  reports: { title: "Báo cáo", sub: "Thống kê tổng hợp tình trạng đội xe" }
 };
 
 function switchView(view) {
@@ -412,25 +417,80 @@ function renderView(view) {
 /* ==========================================================================
    Vehicles
    ========================================================================== */
-function vehicleRowHtml(v) {
-  var st = VEHICLE_STATUS[v.status];
-  var dr = getDriver(v.driverId);
-  var du = daysUntil(v.regExpiry);
-  var regTone = du < 0 ? "danger" : du <= 30 ? "warning" : "muted";
-  var iu = v.insuranceExpiry ? daysUntil(v.insuranceExpiry) : null;
-  var insTone = iu === null ? "muted" : iu < 0 ? "danger" : iu <= 30 ? "warning" : "muted";
-  return '<tr data-id="' + v.id + '">' +
-    '<td><button class="table-link" data-action="view-vehicle" data-id="' + v.id + '">' + escapeHtml(v.plate) + '</button><div class="cell-muted">' + escapeHtml(v.brand) + ' · ' + v.year + '</div></td>' +
-    '<td>' + escapeHtml(v.type) + '</td>' +
-    '<td class="cell-muted">' + escapeHtml(v.site || "—") + '</td>' +
-    '<td>' + (dr ? escapeHtml(dr.name) : '<span class="cell-muted">Chưa phân công</span>') + '</td>' +
-    '<td>' + badge(st.tone, st.label) + '</td>' +
-    '<td><span class="badge-pill badge-' + regTone + '">' + fmtDate(v.regExpiry) + '</span></td>' +
-    '<td>' + (v.insuranceExpiry ? '<span class="badge-pill badge-' + insTone + '">' + fmtDate(v.insuranceExpiry) + '</span>' : '<span class="cell-muted">—</span>') + '</td>' +
-    '<td><div class="row-actions">' +
-      '<button class="icon-btn btn-sm" data-action="edit-vehicle" data-id="' + v.id + '" aria-label="Sửa xe"><svg class="icon icon-sm"><use href="#ic-edit"/></svg></button>' +
-      '<button class="icon-btn btn-sm" data-action="delete-vehicle" data-id="' + v.id + '" aria-label="Xoá xe"><svg class="icon icon-sm"><use href="#ic-trash"/></svg></button>' +
-    '</div></td></tr>';
+/* ---------- Trạng thái đăng kiểm / bảo hiểm / bảo dưỡng theo km ---------- */
+var MAINT_GROUPS = {
+  truck: { label: "Xe tải / cẩu / thùng kín", cap1: 4000, cap2: 24000 },
+  car:   { label: "Xe con / bán tải / khách", cap1: 5000, cap2: 30000 }
+};
+function maintGroupFor(type) {
+  if (type === "Xe tải cẩu (gầu)" || type === "Xe tải thùng kín") return MAINT_GROUPS.truck;
+  return MAINT_GROUPS.car;
+}
+function dateAlertStatus(iso) {
+  if (!iso) return { tone: "muted", label: "Chưa cập nhật" };
+  var d = daysUntil(iso);
+  if (d < 0) return { tone: "danger", label: "Quá hạn " + (-d) + " ngày" };
+  if (d <= 15) return { tone: "danger", label: "Còn " + d + " ngày" };
+  if (d <= 30) return { tone: "warning", label: "Còn " + d + " ngày" };
+  return { tone: "success", label: "Còn " + d + " ngày" };
+}
+function kmAlertStatus(current, lastKm, threshold) {
+  var cur = Number(current);
+  var last = Number(lastKm);
+  if (current === "" || current == null || lastKm === "" || lastKm == null || isNaN(cur) || isNaN(last)) {
+    return { tone: "muted", label: "Chưa cập nhật", pct: 0 };
+  }
+  var used = cur - last;
+  var remain = threshold - used;
+  var pct = Math.max(0, Math.min(100, Math.round((used / threshold) * 100)));
+  if (remain <= 0) return { tone: "danger", label: "Đã vượt " + fmtKm(Math.abs(remain)), pct: 100 };
+  if (remain <= 500) return { tone: "warning", label: "Còn " + fmtKm(remain), pct: pct };
+  return { tone: "success", label: "Còn " + fmtKm(remain), pct: pct };
+}
+function overallVehicleTone(v) {
+  var g = maintGroupFor(v.type);
+  var tones = [
+    dateAlertStatus(v.regExpiry).tone,
+    dateAlertStatus(v.insuranceExpiry).tone,
+    kmAlertStatus(v.odo, v.kmBD1, g.cap1).tone,
+    kmAlertStatus(v.odo, v.kmBD2, g.cap2).tone
+  ];
+  if (tones.indexOf("danger") > -1) return "danger";
+  if (tones.indexOf("warning") > -1) return "warning";
+  if (tones.indexOf("muted") > -1) return "muted";
+  return "success";
+}
+function statusBadgeHtml(tone, prefix, label) {
+  return '<span class="badge-pill badge-' + tone + '">' + escapeHtml(prefix) + ': <b>' + escapeHtml(label) + '</b></span>';
+}
+function kmBarHtml(status) {
+  return '<div class="kmbar"><div class="kmbar-fill kmbar-' + status.tone + '" style="width:' + status.pct + '%"></div></div>';
+}
+
+/* ---------- Danh sách xe: thẻ xe nhóm theo cơ sở ---------- */
+function vehicleCardHtml(v) {
+  var g = maintGroupFor(v.type);
+  var dk = dateAlertStatus(v.regExpiry);
+  var bh = dateAlertStatus(v.insuranceExpiry);
+  var bd1 = kmAlertStatus(v.odo, v.kmBD1, g.cap1);
+  var bd2 = kmAlertStatus(v.odo, v.kmBD2, g.cap2);
+  var selected = state.selectedVehicleIds.indexOf(v.id) > -1;
+  return '<div class="vehicle-card' + (selected ? " is-selected" : "") + '" data-action="view-vehicle" data-id="' + v.id + '" tabindex="0" role="button">' +
+    '<div class="vehicle-card-top">' +
+      '<div class="vehicle-card-main">' +
+        (state.vehicleSelectMode ? '<input type="checkbox" class="vehicle-card-check" data-select-id="' + v.id + '"' + (selected ? " checked" : "") + '>' : '') +
+        '<span class="vehicle-icon"><svg class="icon"><use href="#ic-truck"/></svg></span>' +
+        '<div><div class="plate">' + escapeHtml(v.plate) + '</div><div class="vname">' + escapeHtml(v.brand) + ' — ' + escapeHtml(v.type) + '</div></div>' +
+      '</div>' +
+      '<span class="status-dot status-dot-' + overallVehicleTone(v) + '"></span>' +
+    '</div>' +
+    '<div class="vehicle-card-badges">' +
+      statusBadgeHtml(dk.tone, "Đăng kiểm", dk.label) +
+      statusBadgeHtml(bh.tone, "Bảo hiểm", bh.label) +
+      statusBadgeHtml(bd1.tone, "BD cấp 1", bd1.label) +
+      statusBadgeHtml(bd2.tone, "BD cấp 2", bd2.label) +
+    '</div>' +
+  '</div>';
 }
 
 function populateSiteFilter() {
@@ -442,38 +502,160 @@ function populateSiteFilter() {
   }).join("");
 }
 
-function renderVehicles() {
-  populateSiteFilter();
+function getFilteredVehicles() {
   var q = ($("#vehicleSearch").value || "").trim().toLowerCase();
   var statusFilter = $("#vehicleStatusFilter").value;
   var siteFilter = $("#vehicleSiteFilter").value;
-  var list = DB.vehicles.filter(function (v) {
+  return DB.vehicles.filter(function (v) {
     var matchQ = !q || v.plate.toLowerCase().indexOf(q) > -1 || v.brand.toLowerCase().indexOf(q) > -1 || v.type.toLowerCase().indexOf(q) > -1;
     var matchS = !statusFilter || v.status === statusFilter;
     var matchSite = !siteFilter || v.site === siteFilter;
     return matchQ && matchS && matchSite;
   });
+}
+function renderVehicles() {
+  populateSiteFilter();
+  var baseList = getFilteredVehicles();
+  var list = state.vehicleToneFilter
+    ? baseList.filter(function (v) { return overallVehicleTone(v) === state.vehicleToneFilter; })
+    : baseList;
 
-  var table = $("#vehicleTable");
+  var strip = $("#vehicleAlertStrip");
+  var counts = { danger: 0, warning: 0, success: 0, muted: 0 };
+  baseList.forEach(function (v) { counts[overallVehicleTone(v)]++; });
+  var chipDefs = [
+    { tone: "danger", label: "Cần xử lý ngay" },
+    { tone: "warning", label: "Sắp đến hạn" },
+    { tone: "success", label: "Bình thường" }
+  ];
+  strip.innerHTML = chipDefs.map(function (c) {
+    var active = state.vehicleToneFilter === c.tone;
+    return '<div class="alert-chip alert-chip-' + c.tone + (active ? " is-active" : "") + '" data-action="filter-tone" data-tone="' + c.tone + '" role="button" tabindex="0">' +
+      '<div class="num">' + counts[c.tone] + '</div><div class="lbl">' + c.label + '</div></div>';
+  }).join("");
+  $$('[data-action="filter-tone"]', strip).forEach(function (chip) {
+    chip.addEventListener("click", function () { setVehicleToneFilter(chip.dataset.tone); });
+    chip.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setVehicleToneFilter(chip.dataset.tone); } });
+  });
+
+  var root = $("#vehicleCardsRoot");
   if (!list.length) {
-    table.innerHTML = "";
+    root.innerHTML = "";
     $("#vehicleEmpty").hidden = false;
   } else {
     $("#vehicleEmpty").hidden = true;
-    table.innerHTML = '<thead><tr><th>Biển số / Hãng xe</th><th>Loại xe</th><th>Cơ sở</th><th>Lái xe phụ trách</th><th>Trạng thái</th><th>Hạn đăng kiểm</th><th>Hạn bảo hiểm</th><th></th></tr></thead>' +
-      "<tbody>" + list.map(vehicleRowHtml).join("") + "</tbody>";
+    var sites = Array.from(new Set(list.map(function (v) { return v.site || "Chưa phân cơ sở"; }))).sort();
+    root.innerHTML = sites.map(function (site) {
+      var group = list.filter(function (v) { return (v.site || "Chưa phân cơ sở") === site; });
+      return '<div class="site-group">' +
+        '<h3 class="site-group-title">' + escapeHtml(site) + ' <span class="site-group-count">(' + group.length + ' xe)</span></h3>' +
+        '<div class="vehicle-card-grid">' + group.map(vehicleCardHtml).join("") + '</div>' +
+      '</div>';
+    }).join("");
   }
 
-  $$('[data-action="view-vehicle"], [data-action="edit-vehicle"]', table).forEach(function (btn) {
-    btn.addEventListener("click", function () { openVehicleForm(btn.dataset.id); });
+  $$('[data-action="view-vehicle"]', root).forEach(function (card) {
+    card.addEventListener("click", function () {
+      if (state.vehicleSelectMode) { toggleVehicleSelection(card.dataset.id); return; }
+      openVehicleDetail(card.dataset.id);
+    });
+    card.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      if (state.vehicleSelectMode) { toggleVehicleSelection(card.dataset.id); return; }
+      openVehicleDetail(card.dataset.id);
+    });
   });
-  $$('[data-action="delete-vehicle"]', table).forEach(function (btn) {
-    btn.addEventListener("click", function () { confirmDeleteVehicle(btn.dataset.id); });
+  $$('[data-select-id]', root).forEach(function (cb) {
+    cb.addEventListener("click", function (e) { e.stopPropagation(); });
+    cb.addEventListener("change", function (e) { e.stopPropagation(); toggleVehicleSelection(cb.dataset.selectId); });
   });
 }
 $("#vehicleSearch").addEventListener("input", debounce(renderVehicles, 150));
 $("#vehicleStatusFilter").addEventListener("change", renderVehicles);
 $("#vehicleSiteFilter").addEventListener("change", renderVehicles);
+
+function setVehicleToneFilter(tone) {
+  state.vehicleToneFilter = state.vehicleToneFilter === tone ? "" : tone;
+  renderVehicles();
+}
+
+/* ---------- Chọn nhiều xe + xuất Excel ---------- */
+function toggleVehicleSelection(id) {
+  var idx = state.selectedVehicleIds.indexOf(id);
+  if (idx > -1) state.selectedVehicleIds.splice(idx, 1); else state.selectedVehicleIds.push(id);
+  var card = $('.vehicle-card[data-id="' + id + '"]');
+  if (card) {
+    var isSel = state.selectedVehicleIds.indexOf(id) > -1;
+    card.classList.toggle("is-selected", isSel);
+    var cb = $('[data-select-id="' + id + '"]', card);
+    if (cb) cb.checked = isSel;
+  }
+  updateSelectBar();
+}
+function updateSelectBar() {
+  var n = state.selectedVehicleIds.length;
+  $("#vehicleSelectCount").textContent = "Đã chọn " + n + " xe";
+}
+function setVehicleSelectMode(on) {
+  state.vehicleSelectMode = on;
+  if (!on) state.selectedVehicleIds = [];
+  $("#toggleSelectBtn").textContent = on ? "Đang chọn…" : "Chọn nhiều";
+  $("#toggleSelectBtn").classList.toggle("btn-primary", on);
+  $("#toggleSelectBtn").classList.toggle("btn-ghost", !on);
+  $("#vehicleSelectBar").hidden = !on;
+  updateSelectBar();
+  renderVehicles();
+}
+function vehicleExportRows(list) {
+  return list.map(function (v) {
+    var st = VEHICLE_STATUS[v.status];
+    var dr = getDriver(v.driverId);
+    return {
+      "Biển số": v.plate,
+      "Cơ sở": v.site || "",
+      "Loại xe": v.type,
+      "Hãng xe": v.brand,
+      "Năm SX": v.year || "",
+      "Số km hiện tại": v.odo || "",
+      "Trạng thái": st ? st.label : v.status,
+      "Chủ sở hữu": v.owner || "",
+      "Lái xe phụ trách": dr ? dr.name : "",
+      "Ngày kiểm định gần nhất": v.lastInspection || "",
+      "Hạn đăng kiểm": v.regExpiry || "",
+      "Ngày mua bảo hiểm": v.insuranceStart || "",
+      "Hạn bảo hiểm": v.insuranceExpiry || "",
+      "Km BD cấp 1 gần nhất": v.kmBD1 != null ? v.kmBD1 : "",
+      "Km BD cấp 2 gần nhất": v.kmBD2 != null ? v.kmBD2 : "",
+      "Định mức nhiên liệu": v.fuelNorm || "",
+      "Ghi chú": v.note || ""
+    };
+  });
+}
+function exportVehiclesToExcel(list, filenameSuffix) {
+  if (!list.length) { toast("Không có xe nào để xuất.", "danger"); return; }
+  if (typeof XLSX === "undefined") { toast("Không tải được thư viện xuất Excel, kiểm tra kết nối mạng rồi thử lại.", "danger"); return; }
+  var ws = XLSX.utils.json_to_sheet(vehicleExportRows(list));
+  ws["!cols"] = [12, 8, 16, 20, 8, 14, 16, 26, 18, 18, 14, 16, 14, 16, 16, 20, 40].map(function (w) { return { wch: w }; });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Danh sách xe");
+  var today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, "Danh_sach_xe_PCLD_" + filenameSuffix + "_" + today + ".xlsx");
+  toast("Đã xuất " + list.length + " xe ra Excel.", "success");
+}
+function exportCurrentListToExcel() { exportVehiclesToExcel(getFilteredVehicles(), "loc"); }
+function exportSelectedToExcel() {
+  if (!state.selectedVehicleIds.length) { toast("Chưa chọn xe nào.", "danger"); return; }
+  var ids = state.selectedVehicleIds;
+  var list = DB.vehicles.filter(function (v) { return ids.indexOf(v.id) > -1; });
+  exportVehiclesToExcel(list, "da-chon");
+}
+$("#content").addEventListener("click", function (e) {
+  if (e.target.closest('[data-action="toggle-select-mode"]')) setVehicleSelectMode(!state.vehicleSelectMode);
+  else if (e.target.closest('[data-action="select-cancel"]')) setVehicleSelectMode(false);
+  else if (e.target.closest('[data-action="export-excel"]')) exportCurrentListToExcel();
+  else if (e.target.closest('[data-action="export-selected"]')) exportSelectedToExcel();
+});
 
 function driverOptionsHtml(selectedId) {
   return '<option value="">Chưa phân công</option>' + DB.drivers.map(function (dr) {
@@ -562,6 +744,233 @@ $("#content").addEventListener("click", function (e) {
   var btn = e.target.closest('[data-action="new-vehicle"]');
   if (btn) openVehicleForm(null);
 });
+
+/* ---------- Modal chi tiết xe: Cảnh báo / Chi tiết / Cập nhật ---------- */
+var VEHICLE_DETAIL_TABS = [
+  { k: "canh-bao", label: "Cảnh báo" },
+  { k: "chi-tiet", label: "Chi tiết" },
+  { k: "cap-nhat", label: "Cập nhật" }
+];
+
+var PHOTO_SLOTS = [
+  { key: "photoDangKy", label: "Đăng ký xe" },
+  { key: "photoDangKiem", label: "Đăng kiểm" },
+  { key: "photoBaoHiem", label: "Bảo hiểm" },
+  { key: "photoXe", label: "Ảnh xe" }
+];
+
+// Nén ảnh trên trình duyệt trước khi lưu, vì mỗi ô trên Google Sheets chỉ chứa
+// tối đa ~50.000 ký tự — thử giảm dần kích thước/chất lượng cho tới khi vừa.
+function compressImageToDataUrl(file, maxDim, quality) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onerror = function () { reject(new Error("Không đọc được file ảnh.")); };
+    reader.onload = function () {
+      var img = new Image();
+      img.onerror = function () { reject(new Error("File không phải ảnh hợp lệ.")); };
+      img.onload = function () {
+        var w = img.width, h = img.height;
+        if (w >= h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else if (h > w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function compressImageForStorage(file) {
+  var STEPS = [{ maxDim: 480, quality: 0.5 }, { maxDim: 480, quality: 0.35 }, { maxDim: 360, quality: 0.3 }, { maxDim: 280, quality: 0.25 }];
+  var MAX_CHARS = 45000;
+  function tryStep(i) {
+    var s = STEPS[i];
+    return compressImageToDataUrl(file, s.maxDim, s.quality).then(function (dataUrl) {
+      if (dataUrl.length > MAX_CHARS && i < STEPS.length - 1) return tryStep(i + 1);
+      return dataUrl;
+    });
+  }
+  return tryStep(0);
+}
+function photoSlotHtml(slot, dataUrl) {
+  return '<div class="photo-slot">' +
+    '<div class="photo-slot-preview">' + (dataUrl ? '<img src="' + dataUrl + '" alt="' + escapeHtml(slot.label) + '">' : '<span class="photo-slot-empty">Chưa có ảnh</span>') + '</div>' +
+    '<div class="photo-slot-label">' + escapeHtml(slot.label) + '</div>' +
+    '<div class="photo-slot-actions">' +
+      '<label class="btn btn-ghost btn-sm">' + (dataUrl ? "Đổi ảnh" : "Chọn ảnh") + '<input type="file" accept="image/*" data-photo-input="' + slot.key + '" hidden></label>' +
+      (dataUrl ? '<button type="button" class="btn btn-ghost btn-sm" data-photo-remove="' + slot.key + '">Xoá</button>' : "") +
+    '</div>' +
+  '</div>';
+}
+
+function openVehicleDetail(id) {
+  if (!getVehicle(id)) return;
+  state.vehicleDetailId = id;
+  state.vehicleDetailTab = "canh-bao";
+  var v = getVehicle(id);
+  openModal(v.plate, buildVehicleDetailHtml(v), function (root) { wireVehicleDetailModal(root); });
+}
+function setVehicleDetailTab(tab) {
+  state.vehicleDetailTab = tab;
+  var v = getVehicle(state.vehicleDetailId);
+  if (!v) { closeModal(); return; }
+  $("#modalTitle").textContent = v.plate;
+  $("#modalBody").innerHTML = buildVehicleDetailHtml(v);
+  wireVehicleDetailModal($("#modalBody"));
+}
+
+function vehicleDetailTabsHtml() {
+  return '<div class="tabs">' + VEHICLE_DETAIL_TABS.map(function (t) {
+    return '<button type="button" class="tab' + (state.vehicleDetailTab === t.k ? " is-active" : "") + '" data-detail-tab="' + t.k + '">' + t.label + '</button>';
+  }).join("") + '</div>';
+}
+
+function buildVehicleDetailHtml(v) {
+  var st = VEHICLE_STATUS[v.status];
+  var g = maintGroupFor(v.type);
+  var hero =
+    '<div class="detail-hero">' +
+      '<div class="vehicle-card-main">' +
+        '<span class="vehicle-icon" style="width:52px;height:52px;"><svg class="icon" style="width:24px;height:24px;"><use href="#ic-truck"/></svg></span>' +
+        '<div><div class="plate" style="font-size:19px;">' + escapeHtml(v.plate) + '</div><div class="vname">' + escapeHtml(v.brand) + ' — ' + escapeHtml(v.type) + '</div></div>' +
+      '</div>' +
+      '<div class="meta-grid">' +
+        '<div class="meta-item"><div class="k">Chủ sở hữu</div><div class="v">' + escapeHtml(v.owner || "—") + '</div></div>' +
+        '<div class="meta-item"><div class="k">Cơ sở quản lý</div><div class="v">' + escapeHtml(v.site || "—") + '</div></div>' +
+      '</div>' +
+    '</div>';
+
+  var body = "";
+  if (state.vehicleDetailTab === "canh-bao") {
+    var dk = dateAlertStatus(v.regExpiry), bh = dateAlertStatus(v.insuranceExpiry);
+    var bd1 = kmAlertStatus(v.odo, v.kmBD1, g.cap1), bd2 = kmAlertStatus(v.odo, v.kmBD2, g.cap2);
+    body =
+      '<div class="card"><h3 class="panel-title">Đăng kiểm &amp; Bảo hiểm</h3>' +
+        '<div class="status-row"><span class="lab">Hạn đăng kiểm</span><span class="val">' + (v.regExpiry ? fmtDate(v.regExpiry) + ' · ' : '') + badge(dk.tone, dk.label) + '</span></div>' +
+        '<div class="status-row"><span class="lab">Hạn bảo hiểm bắt buộc</span><span class="val">' + (v.insuranceExpiry ? fmtDate(v.insuranceExpiry) + ' · ' : '') + badge(bh.tone, bh.label) + '</span></div>' +
+      '</div>' +
+      '<div class="card"><h3 class="panel-title">Bảo dưỡng theo km (' + escapeHtml(g.label) + ')</h3>' +
+        '<div class="status-row"><span class="lab">Km hiện tại</span><span class="val">' + (v.odo ? fmtKm(v.odo) : "Chưa cập nhật") + '</span></div>' +
+        '<div style="margin-top:10px;">' +
+          '<div class="status-row" style="border-bottom:none;padding-bottom:2px;"><span class="lab">Cấp 1 (mỗi ' + g.cap1.toLocaleString("vi-VN") + ' km)</span><span class="val">' + badge(bd1.tone, bd1.label) + '</span></div>' +
+          kmBarHtml(bd1) +
+        '</div>' +
+        '<div style="margin-top:14px;">' +
+          '<div class="status-row" style="border-bottom:none;padding-bottom:2px;"><span class="lab">Cấp 2 (mỗi ' + g.cap2.toLocaleString("vi-VN") + ' km)</span><span class="val">' + badge(bd2.tone, bd2.label) + '</span></div>' +
+          kmBarHtml(bd2) +
+        '</div>' +
+      '</div>' +
+      (v.note ? '<div class="card"><h3 class="panel-title">Ghi chú</h3><p class="note-text">' + escapeHtml(v.note) + '</p></div>' : "");
+  } else if (state.vehicleDetailTab === "chi-tiet") {
+    var dr = getDriver(v.driverId);
+    body =
+      '<div class="card">' +
+        '<div class="status-row"><span class="lab">Trạng thái</span><span class="val">' + badge(st.tone, st.label) + '</span></div>' +
+        '<div class="status-row"><span class="lab">Năm sản xuất</span><span class="val">' + (v.year || "—") + '</span></div>' +
+        '<div class="status-row"><span class="lab">Lái xe phụ trách</span><span class="val">' + (dr ? escapeHtml(dr.name) : "Chưa phân công") + '</span></div>' +
+        '<div class="status-row"><span class="lab">Định mức nhiên liệu</span><span class="val">' + (v.fuelNorm ? escapeHtml(v.fuelNorm) : "—") + '</span></div>' +
+        '<div class="status-row"><span class="lab">Ngày kiểm định gần nhất</span><span class="val">' + fmtDate(v.lastInspection) + '</span></div>' +
+        '<div class="status-row"><span class="lab">Ngày mua bảo hiểm</span><span class="val">' + fmtDate(v.insuranceStart) + '</span></div>' +
+      '</div>' +
+      (v.note ? '<div class="card"><h3 class="panel-title">Ghi chú</h3><p class="note-text">' + escapeHtml(v.note) + '</p></div>' : "") +
+      '<button type="button" class="btn btn-ghost" data-action="edit-vehicle-full">✎ Sửa đầy đủ thông tin xe</button>' +
+      '<button type="button" class="btn btn-danger" data-action="delete-vehicle-from-detail">Xoá xe khỏi hệ thống</button>';
+  } else {
+    body =
+      '<form id="quickUpdateForm">' +
+        '<div class="card"><h3 class="panel-title">Đăng kiểm</h3>' +
+          '<div class="form-grid">' +
+            field("Ngày kiểm định gần nhất", '<input type="date" name="lastInspection" value="' + (v.lastInspection || "") + '">') +
+            field("Hạn đăng kiểm", '<input type="date" name="regExpiry" value="' + (v.regExpiry || "") + '">') +
+          '</div>' +
+        '</div>' +
+        '<div class="card"><h3 class="panel-title">Bảo hiểm bắt buộc</h3>' +
+          '<div class="form-grid">' +
+            field("Ngày mua bảo hiểm", '<input type="date" name="insuranceStart" value="' + (v.insuranceStart || "") + '">') +
+            field("Hạn bảo hiểm", '<input type="date" name="insuranceExpiry" value="' + (v.insuranceExpiry || "") + '">') +
+          '</div>' +
+        '</div>' +
+        '<div class="card"><h3 class="panel-title">Số km &amp; mốc bảo dưỡng</h3>' +
+          field("Km hiện tại", '<input type="number" inputmode="numeric" name="odo" value="' + (v.odo || "") + '" placeholder="VD: 45000">', true) +
+          '<div class="form-grid">' +
+            field("Km bảo dưỡng cấp 1 gần nhất", '<input type="number" inputmode="numeric" name="kmBD1" value="' + (v.kmBD1 != null ? v.kmBD1 : "") + '" placeholder="VD: 42000">') +
+            field("Km bảo dưỡng cấp 2 gần nhất", '<input type="number" inputmode="numeric" name="kmBD2" value="' + (v.kmBD2 != null ? v.kmBD2 : "") + '" placeholder="VD: 24000">') +
+          '</div>' +
+          '<p class="form-hint">Sau khi bảo dưỡng xong, cập nhật lại km bảo dưỡng gần nhất tương ứng để hệ thống tính đúng hạn tiếp theo.</p>' +
+        '</div>' +
+        '<button type="submit" class="btn btn-primary">Lưu cập nhật</button>' +
+      '</form>' +
+      '<div class="card"><h3 class="panel-title">Ảnh giấy tờ xe</h3>' +
+        '<div class="photo-grid">' +
+          PHOTO_SLOTS.map(function (slot) { return photoSlotHtml(slot, v[slot.key]); }).join("") +
+        '</div>' +
+        '<p class="form-hint">Ảnh được nén nhỏ lại ngay trên trình duyệt trước khi lưu, chọn ảnh là lưu luôn (không cần bấm "Lưu cập nhật").</p>' +
+      '</div>';
+  }
+
+  return hero + vehicleDetailTabsHtml() + body;
+}
+
+function wireVehicleDetailModal(root) {
+  $$('[data-detail-tab]', root).forEach(function (btn) {
+    btn.addEventListener("click", function () { setVehicleDetailTab(btn.dataset.detailTab); });
+  });
+  var editBtn = $('[data-action="edit-vehicle-full"]', root);
+  if (editBtn) editBtn.addEventListener("click", function () { var id = state.vehicleDetailId; closeModal(); openVehicleForm(id); });
+  var delBtn = $('[data-action="delete-vehicle-from-detail"]', root);
+  if (delBtn) delBtn.addEventListener("click", function () { var id = state.vehicleDetailId; closeModal(); confirmDeleteVehicle(id); });
+  var form = $("#quickUpdateForm", root);
+  if (form) form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = getVehicle(state.vehicleDetailId);
+    if (!v) return;
+    var f = new FormData(e.target);
+    v.lastInspection = f.get("lastInspection") || "";
+    v.regExpiry = f.get("regExpiry") || "";
+    v.insuranceStart = f.get("insuranceStart") || "";
+    v.insuranceExpiry = f.get("insuranceExpiry") || "";
+    v.odo = f.get("odo") ? Number(f.get("odo")) : "";
+    v.kmBD1 = f.get("kmBD1") !== "" ? Number(f.get("kmBD1")) : "";
+    v.kmBD2 = f.get("kmBD2") !== "" ? Number(f.get("kmBD2")) : "";
+    persistVehicle(v);
+    toast("Đã lưu cập nhật cho xe " + v.plate, "success");
+    renderNotif();
+    if (state.view === "vehicles") renderVehicles();
+    state.vehicleDetailTab = "canh-bao";
+    setVehicleDetailTab("canh-bao");
+  });
+  $$('[data-photo-input]', root).forEach(function (input) {
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var key = input.dataset.photoInput;
+      var v = getVehicle(state.vehicleDetailId);
+      if (!v) return;
+      compressImageForStorage(file).then(function (dataUrl) {
+        v[key] = dataUrl;
+        persistVehicle(v);
+        toast("Đã lưu ảnh · " + v.plate, "success");
+        if (state.view === "vehicles") renderVehicles();
+        setVehicleDetailTab(state.vehicleDetailTab);
+      }).catch(function (err) {
+        toast("Lỗi xử lý ảnh: " + err.message, "danger");
+      });
+    });
+  });
+  $$('[data-photo-remove]', root).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var key = btn.dataset.photoRemove;
+      var v = getVehicle(state.vehicleDetailId);
+      if (!v) return;
+      v[key] = "";
+      persistVehicle(v);
+      toast("Đã xoá ảnh", "success");
+      setVehicleDetailTab(state.vehicleDetailTab);
+    });
+  });
+}
 
 function field(label, controlHtml, full) {
   return '<label class="form-field' + (full ? " full" : "") + '"><span>' + label + '</span>' + controlHtml + '</label>';
@@ -792,27 +1201,22 @@ document.addEventListener("click", function (e) { if (e.target.closest('[data-ac
    Reports
    ========================================================================== */
 function renderReports() {
-  var months = lastMonths(6);
-  var thisMonth = months[months.length - 1];
-  var maintThisMonth = DB.maintenance.filter(function (m) { return inSameMonth(m.date, thisMonth); }).reduce(function (s, m) { return s + m.cost; }, 0);
+  var toneCounts = { danger: 0, warning: 0, success: 0, muted: 0 };
+  DB.vehicles.forEach(function (v) { toneCounts[overallVehicleTone(v)]++; });
   var activeRatio = DB.vehicles.length ? Math.round(DB.vehicles.filter(function (v) { return v.status === "active"; }).length / DB.vehicles.length * 100) : 0;
-  var dueSoonCount = collectAlerts().length;
+  var licenseSoonCount = DB.drivers.filter(function (dr) { var du = daysUntil(dr.licenseExpiry); return du <= 30; }).length;
 
   $("#reportKpiGrid").innerHTML = [
     { icon: "ic-truck", tone: "primary", label: "Tổng số xe", value: DB.vehicles.length },
     { icon: "ic-check", tone: "success", label: "Đang hoạt động", value: activeRatio + "%" },
-    { icon: "ic-alert", tone: "warning", label: "Sắp đến hạn (30 ngày)", value: dueSoonCount },
-    { icon: "ic-wrench", tone: "info", label: "Chi phí bảo dưỡng tháng này", value: fmtCurrency(maintThisMonth) }
+    { icon: "ic-alert", tone: "danger", label: "Cần xử lý ngay", value: toneCounts.danger },
+    { icon: "ic-clock", tone: "warning", label: "Sắp đến hạn", value: toneCounts.warning },
+    { icon: "ic-users", tone: "info", label: "Tổng số lái xe", value: DB.drivers.length },
+    { icon: "ic-id", tone: "warning", label: "Bằng lái sắp hết hạn", value: licenseSoonCount }
   ].map(function (k) {
     return '<div class="kpi-card"><div class="kpi-top"><span class="kpi-icon" style="background:var(--color-' + k.tone + (k.tone === "primary" ? "-light" : "-bg") + ');color:var(--color-' + k.tone + ')"><svg class="icon"><use href="#' + k.icon + '"/></svg></span></div>' +
       '<span class="kpi-value">' + k.value + '</span><span class="kpi-label">' + k.label + '</span></div>';
   }).join("");
-
-  var costPoints = months.map(function (m) {
-    var sum = DB.maintenance.filter(function (mm) { return inSameMonth(mm.date, m); }).reduce(function (s, mm) { return s + mm.cost; }, 0);
-    return { label: monthLabel(m), value: sum };
-  });
-  renderBarChart($("#reportCostChart"), costPoints, { valueFormatter: function (v) { return v >= 1000000 ? (v / 1000000).toFixed(1) + "tr" : v ? (v / 1000).toFixed(0) + "k" : "0"; } });
 
   var byStatus = {};
   DB.vehicles.forEach(function (v) { byStatus[v.status] = (byStatus[v.status] || 0) + 1; });
@@ -821,17 +1225,10 @@ function renderReports() {
     return { label: VEHICLE_STATUS[k].label, value: byStatus[k] || 0, color: colorMap[k] };
   }));
 
-  var perVehicle = DB.vehicles.map(function (v) {
-    var cost = DB.maintenance.filter(function (m) { return m.vehicleId === v.id; }).reduce(function (s, m) { return s + m.cost; }, 0);
-    return { v: v, cost: cost };
-  }).sort(function (a, b) { return b.cost - a.cost; });
-
-  $("#costByVehicleTable").innerHTML = '<thead><tr><th>Xe</th><th>Chi phí bảo dưỡng</th><th>Trạng thái</th></tr></thead><tbody>' +
-    perVehicle.map(function (r) {
-      var st = VEHICLE_STATUS[r.v.status];
-      return '<tr><td class="cell-primary">' + escapeHtml(r.v.plate) + '<div class="cell-muted">' + escapeHtml(r.v.brand) + '</div></td>' +
-        '<td class="cell-primary">' + fmtCurrency(r.cost) + '</td><td>' + badge(st.tone, st.label) + '</td></tr>';
-    }).join("") + "</tbody>";
+  var bySite = {};
+  DB.vehicles.forEach(function (v) { var s = v.site || "Chưa phân cơ sở"; bySite[s] = (bySite[s] || 0) + 1; });
+  var sitePoints = Object.keys(bySite).sort().map(function (s) { return { label: s, value: bySite[s] }; });
+  renderBarChart($("#siteBarChart"), sitePoints);
 }
 
 /* ==========================================================================

@@ -4,5 +4,5 @@
 //
 // Lấy URL theo hướng dẫn tại google-apps-script/README.md, rồi dán vào dòng dưới đây:
 window.APP_CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycby9gj0YR5wiUovNwlZLbZ7vBx6AUl44OnQztBvGKCtw4yiAnYpOoN74Y3pFB6hxSFOC/exec"
+  API_URL: "https://script.google.com/macros/s/AKfycbzOTSyJFvusitOrsQ_WpOzn_2TRM14z0B_Ak0Sw3SpBfWlVA0W3SaQ8uwRMH9wUT9TU/exec"
 };
