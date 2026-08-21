@@ -201,6 +201,19 @@ function setupDailyInspectionAlert() {
   Logger.log('Da dat lich kiem tra canh bao dang kiem hang ngay luc ~7h sang, gui toi ' + ALERT_EMAIL);
 }
 
+/**
+ * CHẠY THỬ TRỰC TIẾP — chọn hàm này trong dropdown rồi bấm Run để gửi ngay
+ * 1 email mẫu, kiểm tra xem việc gửi mail có hoạt động không (không cần
+ * chờ đúng ngày, không đụng đến dữ liệu xe thật).
+ */
+function testSendAlertEmail() {
+  MailApp.sendEmail(ALERT_EMAIL, 'Email thử — Cảnh báo đăng kiểm Văn phòng PCLĐ',
+    'Đây là email thử để kiểm tra tính năng cảnh báo hết hạn đăng kiểm.\n\n' +
+    'Nếu bạn nhận được email này, nghĩa là việc gửi mail đã hoạt động bình thường.\n' +
+    'Email cảnh báo thật (khi có xe còn ' + ALERT_DAYS_BEFORE + ' ngày là hết hạn đăng kiểm) sẽ có nội dung tương tự, gửi tự động mỗi ngày.');
+  Logger.log('Da gui email thu toi ' + ALERT_EMAIL);
+}
+
 /** Ham nay duoc trigger hang ngay goi tu dong (xem setupDailyInspectionAlert). */
 function checkInspectionAlerts() {
   var vehicles = readSheet_(SHEET_VEHICLES, VEHICLE_FIELDS);
