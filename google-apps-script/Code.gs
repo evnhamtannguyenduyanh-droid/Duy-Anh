@@ -182,6 +182,47 @@ function migrateAddPhotoFields() {
   SpreadsheetApp.getActiveSpreadsheet().toast('Da them 4 cot anh giay to vao sheet Vehicles.', 'Hoan tat', 6);
 }
 
+/* ============ Canh bao het han dang kiem qua email ============ */
+// Gui email canh bao truoc ALERT_DAYS_BEFORE ngay khi xe den han dang kiem (regExpiry).
+var ALERT_EMAIL = 'lehuuloi1606@gmail.com';
+var ALERT_DAYS_BEFORE = 3;
+
+/**
+ * Chay ham nay MOT LAN tu trinh soan thao Apps Script (chon setupDailyInspectionAlert
+ * trong dropdown > bam Run) de dat lich tu dong kiem tra moi ngay luc ~7h sang.
+ * Lan dau chay se hoi cap quyen gui email — chon tai khoan cua ban > Cho phep.
+ * An toan chay lai nhieu lan (tu xoa lich cu truoc khi tao lich moi, khong bi trung).
+ */
+function setupDailyInspectionAlert() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'checkInspectionAlerts') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('checkInspectionAlerts').timeBased().everyDays(1).atHour(7).create();
+  Logger.log('Da dat lich kiem tra canh bao dang kiem hang ngay luc ~7h sang, gui toi ' + ALERT_EMAIL);
+}
+
+/** Ham nay duoc trigger hang ngay goi tu dong (xem setupDailyInspectionAlert). */
+function checkInspectionAlerts() {
+  var vehicles = readSheet_(SHEET_VEHICLES, VEHICLE_FIELDS);
+  var tz = Session.getScriptTimeZone() || 'Asia/Ho_Chi_Minh';
+  var today = new Date(Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd') + 'T00:00:00');
+  var due = [];
+  vehicles.forEach(function (v) {
+    if (!v.regExpiry) return;
+    var expiry = new Date(v.regExpiry + 'T00:00:00');
+    if (isNaN(expiry.getTime())) return;
+    var days = Math.round((expiry.getTime() - today.getTime()) / 86400000);
+    if (days === ALERT_DAYS_BEFORE) due.push(v);
+  });
+  if (!due.length) return;
+  var lines = due.map(function (v) {
+    return '- ' + v.plate + ' (' + v.brand + ', ' + (v.owner || 'chưa rõ đơn vị') + ') — hết hạn đăng kiểm ngày ' + v.regExpiry;
+  });
+  var body = 'Các xe sau còn ' + ALERT_DAYS_BEFORE + ' ngày nữa là hết hạn đăng kiểm:\n\n' + lines.join('\n') +
+    '\n\nXem chi tiết và cập nhật tại: ' + SpreadsheetApp.getActiveSpreadsheet().getUrl();
+  MailApp.sendEmail(ALERT_EMAIL, 'Cảnh báo: ' + due.length + ' xe sắp hết hạn đăng kiểm (còn ' + ALERT_DAYS_BEFORE + ' ngày) — Văn phòng PCLĐ', body);
+}
+
 function createSheetIfMissing_(ss, name, fields) {
   var sh = ss.getSheetByName(name);
   if (!sh) sh = ss.insertSheet(name);
