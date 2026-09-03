@@ -148,7 +148,10 @@ function testGetDebugInfo() {
 }
 
 // ============================================================= CANH BAO HET HAN DANG KIEM QUA EMAIL
-// Gui email canh bao truoc ALERT_DAYS_BEFORE ngay khi xe den han dang kiem (DangKiemHetHan).
+// Gui email canh bao khi xe con <= ALERT_DAYS_BEFORE ngay la den han dang kiem (DangKiemHetHan),
+// bao gom ca xe DA QUA HAN. Dung "<=" thay vi "== 3" de khong bo sot xe nao neu lich chay
+// bi tre hoac duoc dat sau khi moc 3 ngay da troi qua. Doi lai, xe trong dien nay se duoc
+// nhac lai MOI NGAY cho toi khi cap nhat han dang kiem moi.
 var ALERT_EMAIL = 'evnhamtan.nguyenduyanh@gmail.com';
 var ALERT_DAYS_BEFORE = 3;
 
@@ -191,15 +194,23 @@ function checkInspectionAlerts() {
     var expiry = new Date(v.DangKiemHetHan + 'T00:00:00');
     if (isNaN(expiry.getTime())) return;
     var days = Math.round((expiry.getTime() - today.getTime()) / 86400000);
-    if (days === ALERT_DAYS_BEFORE) due.push(v);
+    if (days <= ALERT_DAYS_BEFORE) due.push({ v: v, days: days });
   });
   if (!due.length) return;
-  var lines = due.map(function (v) {
-    return '- ' + v.BienSo + ' — hết hạn đăng kiểm ngày ' + v.DangKiemHetHan;
+  due.sort(function (a, b) { return a.days - b.days; }); // gap nhat len dau
+  var overdue = due.filter(function (d) { return d.days < 0; }).length;
+  var lines = due.map(function (d) {
+    var tinhTrang = d.days < 0 ? 'ĐÃ QUÁ HẠN ' + (-d.days) + ' ngày'
+      : d.days === 0 ? 'HẾT HẠN HÔM NAY'
+      : 'còn ' + d.days + ' ngày';
+    return '- ' + d.v.BienSo + ' — hạn đăng kiểm ' + d.v.DangKiemHetHan + ' — ' + tinhTrang;
   });
-  var body = 'Các xe sau (Điện lực Hàm Tân) còn ' + ALERT_DAYS_BEFORE + ' ngày nữa là hết hạn đăng kiểm:\n\n' + lines.join('\n') +
-    '\n\nXem chi tiết và cập nhật tại: ' + getSpreadsheet_().getUrl();
-  MailApp.sendEmail(ALERT_EMAIL, 'Cảnh báo: ' + due.length + ' xe sắp hết hạn đăng kiểm (còn ' + ALERT_DAYS_BEFORE + ' ngày) — Điện lực Hàm Tân', body);
+  var body = 'Các xe sau (Điện lực Hàm Tân) đã hết hạn hoặc còn tối đa ' + ALERT_DAYS_BEFORE + ' ngày là hết hạn đăng kiểm:\n\n' + lines.join('\n') +
+    '\n\nXem chi tiết và cập nhật tại: ' + getSpreadsheet_().getUrl() +
+    '\n\n(Email này gửi tự động mỗi ngày. Xe sẽ hết được nhắc sau khi cập nhật hạn đăng kiểm mới.)';
+  var subject = 'Cảnh báo đăng kiểm — Điện lực Hàm Tân: ' + due.length + ' xe cần xử lý' +
+    (overdue ? ' (' + overdue + ' xe đã quá hạn)' : '');
+  MailApp.sendEmail(ALERT_EMAIL, subject, body);
 }
 
 // ============================================================= LỊCH SỬ THAY ĐỔI

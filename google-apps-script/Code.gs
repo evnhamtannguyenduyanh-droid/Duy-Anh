@@ -183,7 +183,10 @@ function migrateAddPhotoFields() {
 }
 
 /* ============ Canh bao het han dang kiem qua email ============ */
-// Gui email canh bao truoc ALERT_DAYS_BEFORE ngay khi xe den han dang kiem (regExpiry).
+// Gui email canh bao khi xe con <= ALERT_DAYS_BEFORE ngay la den han dang kiem (regExpiry),
+// bao gom ca xe DA QUA HAN. Dung "<=" thay vi "== 3" de khong bo sot xe nao neu lich chay
+// bi tre hoac duoc dat sau khi moc 3 ngay da troi qua. Doi lai, xe trong dien nay se duoc
+// nhac lai MOI NGAY cho toi khi cap nhat han dang kiem moi.
 var ALERT_EMAIL = 'lehuuloi1606@gmail.com';
 var ALERT_DAYS_BEFORE = 3;
 
@@ -225,15 +228,23 @@ function checkInspectionAlerts() {
     var expiry = new Date(v.regExpiry + 'T00:00:00');
     if (isNaN(expiry.getTime())) return;
     var days = Math.round((expiry.getTime() - today.getTime()) / 86400000);
-    if (days === ALERT_DAYS_BEFORE) due.push(v);
+    if (days <= ALERT_DAYS_BEFORE) due.push({ v: v, days: days });
   });
   if (!due.length) return;
-  var lines = due.map(function (v) {
-    return '- ' + v.plate + ' (' + v.brand + ', ' + (v.owner || 'chưa rõ đơn vị') + ') — hết hạn đăng kiểm ngày ' + v.regExpiry;
+  due.sort(function (a, b) { return a.days - b.days; }); // gap nhat len dau
+  var overdue = due.filter(function (d) { return d.days < 0; }).length;
+  var lines = due.map(function (d) {
+    var tinhTrang = d.days < 0 ? 'ĐÃ QUÁ HẠN ' + (-d.days) + ' ngày'
+      : d.days === 0 ? 'HẾT HẠN HÔM NAY'
+      : 'còn ' + d.days + ' ngày';
+    return '- ' + d.v.plate + ' (' + d.v.brand + ', ' + (d.v.owner || 'chưa rõ đơn vị') + ') — hạn đăng kiểm ' + d.v.regExpiry + ' — ' + tinhTrang;
   });
-  var body = 'Các xe sau còn ' + ALERT_DAYS_BEFORE + ' ngày nữa là hết hạn đăng kiểm:\n\n' + lines.join('\n') +
-    '\n\nXem chi tiết và cập nhật tại: ' + SpreadsheetApp.getActiveSpreadsheet().getUrl();
-  MailApp.sendEmail(ALERT_EMAIL, 'Cảnh báo: ' + due.length + ' xe sắp hết hạn đăng kiểm (còn ' + ALERT_DAYS_BEFORE + ' ngày) — Văn phòng PCLĐ', body);
+  var body = 'Các xe sau đã hết hạn hoặc còn tối đa ' + ALERT_DAYS_BEFORE + ' ngày là hết hạn đăng kiểm:\n\n' + lines.join('\n') +
+    '\n\nXem chi tiết và cập nhật tại: ' + SpreadsheetApp.getActiveSpreadsheet().getUrl() +
+    '\n\n(Email này gửi tự động mỗi ngày. Xe sẽ hết được nhắc sau khi cập nhật hạn đăng kiểm mới.)';
+  var subject = 'Cảnh báo đăng kiểm — Văn phòng PCLĐ: ' + due.length + ' xe cần xử lý' +
+    (overdue ? ' (' + overdue + ' xe đã quá hạn)' : '');
+  MailApp.sendEmail(ALERT_EMAIL, subject, body);
 }
 
 function createSheetIfMissing_(ss, name, fields) {
