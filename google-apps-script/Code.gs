@@ -9,7 +9,7 @@ var SHEET_VEHICLES = 'Vehicles';
 var SHEET_DRIVERS = 'Drivers';
 var SHEET_MAINTENANCE = 'Maintenance';
 
-var VEHICLE_FIELDS = ['id', 'plate', 'type', 'brand', 'year', 'odo', 'status', 'regExpiry', 'lastInspection', 'insuranceStart', 'insuranceExpiry', 'driverId', 'owner', 'site', 'fuelNorm', 'note', 'kmBD1', 'kmBD2', 'photoDangKy', 'photoDangKiem', 'photoBaoHiem', 'photoXe'];
+var VEHICLE_FIELDS = ['id', 'plate', 'type', 'brand', 'year', 'odo', 'status', 'regExpiry', 'lastInspection', 'insuranceStart', 'insuranceExpiry', 'driverId', 'owner', 'site', 'fuelNorm', 'note', 'kmBD1', 'kmBD2', 'photoDangKy', 'photoDangKiem', 'photoBaoHiem', 'photoXe', 'photoDangKySau', 'photoKhac'];
 // Luu y: cac truong moi (kmBD1/kmBD2, roi photoDangKy/photoDangKiem/photoBaoHiem/photoXe)
 // deu duoc them VAO CUOI danh sach (khong chen giua) de khong lam lech vi tri cac cot
 // da co du lieu. Xem migrateAddKmFields() / migrateAddPhotoFields() ben duoi.
@@ -180,6 +180,69 @@ function migrateAddPhotoFields() {
   }
   sh.getRange(1, lastCol + 1, 1, 4).setValues([['photoDangKy', 'photoDangKiem', 'photoBaoHiem', 'photoXe']]);
   SpreadsheetApp.getActiveSpreadsheet().toast('Da them 4 cot anh giay to vao sheet Vehicles.', 'Hoan tat', 6);
+}
+
+/**
+ * Chay ham nay MOT LAN de bo sung 2 cot anh (photoDangKySau, photoKhac) vao cuoi
+ * hang tieu de sheet Vehicles — can truoc khi chay importHamTan(). Khong dong gi den
+ * du lieu da co. An toan chay lai nhieu lan (bo qua neu da co header).
+ */
+function migrateAddPhotoFields2() {
+  var sh = getSheet_(SHEET_VEHICLES);
+  var lastCol = sh.getLastColumn();
+  var headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+  if (headers.indexOf('photoDangKySau') > -1) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('Da co san cot photoDangKySau/photoKhac, khong can migrate lai.', 'Bo qua', 6);
+    return;
+  }
+  sh.getRange(1, lastCol + 1, 1, 2).setValues([['photoDangKySau', 'photoKhac']]);
+  SpreadsheetApp.getActiveSpreadsheet().toast('Da them 2 cot anh vao sheet Vehicles.', 'Hoan tat', 6);
+}
+
+/* ============ Gop xe Dien luc Ham Tan vao app dung chung ============ */
+// Doc du lieu dong (han dang kiem/bao hiem, km, anh Drive) tu API cua app Ham Tan
+// (chi GET, khong sua gi o ben do) va them 4 xe vao sheet Vehicles voi site = "DL Ham Tan".
+// Xe nao da co san (trung bien so) se duoc BO QUA, nen chay lai khong ghi de du lieu moi.
+// Thu tu: migrateAddPhotoFields2() -> importHamTan(). Lan dau chay se xin them quyen
+// "ket noi dich vu ben ngoai" (UrlFetchApp).
+var HAMTAN_API_URL = 'https://script.google.com/macros/s/AKfycbxV2Fi5Krk6S4OaDzgMukzd45lGHovSG0KDjvPER4RaSolqkPH9alzSaGBW9z21TtWSSA/exec';
+var HAMTAN_SITE = 'ĐL Hàm Tân';
+// type phai nam trong VEHICLE_TYPES cua app (xe thang nang/cau -> "Xe tai cau (gau)" de dung nguong bao duong nhom xe tai)
+var HAMTAN_VEHICLES = {
+  '86C-128.29': { id: 'ht-1', type: 'Xe tải cẩu (gầu)', brand: 'ISUZU', year: 2018, owner: 'Công ty Điện lực Bình Thuận', fuelNorm: '12 lít/100km + 3 lít/giờ cẩu', note: 'Xe thang nâng người 03 chỗ.' },
+  '86C-153.50': { id: 'ht-2', type: 'Xe tải cẩu (gầu)', brand: 'ISUZU', year: 2021, owner: 'Công ty Điện lực Bình Thuận', fuelNorm: '24 lít/100km + 3 lít/giờ cẩu', note: 'Xe cẩu bán tải 03 chỗ.' },
+  '86C-188.93': { id: 'ht-3', type: 'Xe tải thùng kín', brand: 'SUZUKI', year: 2023, owner: 'Công ty Điện lực Bình Thuận', fuelNorm: '10 lít/100km', note: 'Bản chính Giấy chứng nhận đăng ký xe đang do Vietinbank CN TP.HCM giữ theo hợp đồng thế chấp của EVNSPC. Xem tab Hồ sơ đăng ký.' },
+  '49C-262.84': { id: 'ht-4', type: 'Xe bán tải', brand: 'NISSAN NAVARA EL', year: 2020, owner: 'Công ty Điện lực Lâm Đồng', fuelNorm: '14 lít/100km (QĐ 1627/2021)', note: 'Xe điều chuyển từ Điện lực Đà Lạt.' }
+};
+
+function importHamTan() {
+  var res = UrlFetchApp.fetch(HAMTAN_API_URL + '?action=vehicles', { muteHttpExceptions: true, followRedirects: true });
+  var data = JSON.parse(res.getContentText());
+  if (!data.vehicles) throw new Error('API Ham Tan khong tra ve danh sach xe: ' + res.getContentText().slice(0, 200));
+
+  var sh = getSheet_(SHEET_VEHICLES);
+  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  if (headers.indexOf('photoKhac') < 0) throw new Error('Chua co cot photoKhac: chay migrateAddPhotoFields2() truoc.');
+
+  var existing = readSheet_(SHEET_VEHICLES, VEHICLE_FIELDS).map(function (v) { return v.plate; });
+  var added = [], skipped = [];
+  data.vehicles.forEach(function (h) {
+    var meta = HAMTAN_VEHICLES[h.BienSo];
+    if (!meta) { skipped.push(h.BienSo + ' (khong co trong danh sach)'); return; }
+    if (existing.indexOf(h.BienSo) > -1) { skipped.push(h.BienSo + ' (da co)'); return; }
+    upsertRow_(SHEET_VEHICLES, VEHICLE_FIELDS, {
+      id: meta.id, plate: h.BienSo, type: meta.type, brand: meta.brand, year: meta.year,
+      odo: h.KmHienTai, status: 'active', regExpiry: h.DangKiemHetHan, lastInspection: h.DangKiemNgay,
+      insuranceStart: h.BaoHiemNgay, insuranceExpiry: h.BaoHiemHetHan, driverId: '',
+      owner: meta.owner, site: HAMTAN_SITE, fuelNorm: meta.fuelNorm, note: meta.note,
+      kmBD1: h.KmBD1, kmBD2: h.KmBD2,
+      photoDangKy: h.Photo_Truoc, photoDangKySau: h.Photo_Sau, photoDangKiem: h.Photo_KiemDinh, photoKhac: h.Photo_Khac
+    });
+    added.push(h.BienSo);
+  });
+  var msg = 'Da them: ' + (added.join(', ') || 'khong co') + '. Bo qua: ' + (skipped.join('; ') || 'khong co');
+  Logger.log(msg);
+  SpreadsheetApp.getActiveSpreadsheet().toast(msg, 'Nhap xe Ham Tan', 10);
 }
 
 /* ============ Canh bao het han dang kiem qua email ============ */
