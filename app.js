@@ -697,7 +697,8 @@ function openVehicleForm(id) {
     $("#vehicleForm", root).addEventListener("submit", function (e) {
       e.preventDefault();
       var f = new FormData(e.target);
-      var rec = {
+      // Giữ nguyên các cột không có trong form (kmBD1/kmBD2, ảnh...) để lưu không xoá mất chúng.
+      var rec = Object.assign({}, v || {}, {
         id: v ? v.id : uid("v"),
         plate: f.get("plate").trim(),
         type: f.get("type"),
@@ -714,7 +715,7 @@ function openVehicleForm(id) {
         site: (f.get("site") || "").trim(),
         fuelNorm: (f.get("fuelNorm") || "").trim(),
         note: (f.get("note") || "").trim()
-      };
+      });
       if (v) {
         var idx = DB.vehicles.findIndex(function (x) { return x.id === v.id; });
         DB.vehicles[idx] = rec;
@@ -749,14 +750,22 @@ $("#content").addEventListener("click", function (e) {
 var VEHICLE_DETAIL_TABS = [
   { k: "canh-bao", label: "Cảnh báo" },
   { k: "chi-tiet", label: "Chi tiết" },
-  { k: "cap-nhat", label: "Cập nhật" }
+  { k: "cap-nhat", label: "Cập nhật" },
+  { k: "ho-so", label: "Hồ sơ đăng ký", needsProfile: true }
 ];
 
+// Hồ sơ đăng ký/thông số/thế chấp (profiles.js) chỉ có cho một số xe, tra theo biển số.
+function getVehicleProfile(v) {
+  return (typeof VEHICLE_PROFILES !== "undefined" && VEHICLE_PROFILES[v.plate]) || null;
+}
+
 var PHOTO_SLOTS = [
-  { key: "photoDangKy", label: "Đăng ký xe" },
+  { key: "photoDangKy", label: "Đăng ký xe (mặt trước)" },
+  { key: "photoDangKySau", label: "Đăng ký xe (mặt sau)" },
   { key: "photoDangKiem", label: "Đăng kiểm" },
   { key: "photoBaoHiem", label: "Bảo hiểm" },
-  { key: "photoXe", label: "Ảnh xe" }
+  { key: "photoXe", label: "Ảnh xe" },
+  { key: "photoKhac", label: "Khác (thế chấp...)" }
 ];
 
 // Nén ảnh trên trình duyệt trước khi lưu, vì mỗi ô trên Google Sheets chỉ chứa
@@ -822,7 +831,8 @@ function setVehicleDetailTab(tab) {
 }
 
 function vehicleDetailTabsHtml() {
-  return '<div class="tabs">' + VEHICLE_DETAIL_TABS.map(function (t) {
+  var hasProfile = !!getVehicleProfile(getVehicle(state.vehicleDetailId) || {});
+  return '<div class="tabs">' + VEHICLE_DETAIL_TABS.filter(function (t) { return !t.needsProfile || hasProfile; }).map(function (t) {
     return '<button type="button" class="tab' + (state.vehicleDetailTab === t.k ? " is-active" : "") + '" data-detail-tab="' + t.k + '">' + t.label + '</button>';
   }).join("") + '</div>';
 }
@@ -877,6 +887,25 @@ function buildVehicleDetailHtml(v) {
       (v.note ? '<div class="card"><h3 class="panel-title">Ghi chú</h3><p class="note-text">' + escapeHtml(v.note) + '</p></div>' : "") +
       '<button type="button" class="btn btn-ghost" data-action="edit-vehicle-full">✎ Sửa đầy đủ thông tin xe</button>' +
       '<button type="button" class="btn btn-danger" data-action="delete-vehicle-from-detail">Xoá xe khỏi hệ thống</button>';
+  } else if (state.vehicleDetailTab === "ho-so") {
+    var pf = getVehicleProfile(v) || {};
+    var profileRows = function (rows) {
+      return (rows || []).map(function (r) {
+        return '<div class="status-row"><span class="lab">' + escapeHtml(r[0]) + '</span><span class="val" style="text-align:right;max-width:58%;">' + escapeHtml(r[1]) + '</span></div>';
+      }).join("");
+    };
+    var refs = (REG_REFS.common || []).concat(pf.nhom ? (REG_REFS[pf.nhom] || []) : [], REG_REFS.process || []);
+    body =
+      '<div class="card"><h3 class="panel-title">Thông tin đăng ký xe</h3>' + profileRows(pf.dangky) + '</div>' +
+      '<div class="card"><h3 class="panel-title">Thông số kỹ thuật</h3>' + profileRows(pf.thongso) + '</div>' +
+      (pf.the_chap ? '<div class="card"><h3 class="panel-title">Tình trạng thế chấp</h3>' + profileRows(pf.the_chap) + '</div>' : "") +
+      (pf.ghichu_full ? '<div class="card"><h3 class="panel-title">Ghi chú / cảnh báo</h3><p class="note-text">' + escapeHtml(pf.ghichu_full) + '</p></div>' : "") +
+      '<div class="card"><h3 class="panel-title">Quy định áp dụng cho xe này</h3>' +
+        refs.map(function (r) {
+          return '<div class="status-row" style="align-items:flex-start;"><span class="lab" style="white-space:nowrap;">' + escapeHtml(r.tag) + '</span><span class="val" style="text-align:left;font-weight:400;">' + escapeHtml(r.txt) + '</span></div>';
+        }).join("") +
+        '<p class="form-hint">Nguồn: Quy định quản lý, sử dụng xe ô tô trong Công ty Điện lực Lâm Đồng.</p>' +
+      '</div>';
   } else {
     body =
       '<form id="quickUpdateForm">' +
